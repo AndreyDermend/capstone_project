@@ -1,0 +1,103 @@
+{
+  "version": 1,
+  "description": "Canonical questionnaire schema used by the prototype regardless of NDA type.",
+  "fields": [
+    {
+      "name": "nda_type",
+      "label": "NDA Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Mutual",
+        "Unilateral"
+      ]
+    },
+    {
+      "name": "party_a_name",
+      "label": "Party A Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "party_a_entity_details",
+      "label": "Party A Entity Details",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "party_a_email",
+      "label": "Party A Email",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "party_b_name",
+      "label": "Party B Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "party_b_entity_details",
+      "label": "Party B Entity Details",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "party_b_email",
+      "label": "Party B Email",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "purpose",
+      "label": "Purpose",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "confidentiality_period_number",
+      "label": "Confidentiality Period Number",
+      "type": "number",
+      "required": true
+    },
+    {
+      "name": "confidentiality_period_unit",
+      "label": "Confidentiality Period Unit",
+      "type": "select",
+      "required": true,
+      "options": [
+        "months",
+        "years"
+      ]
+    },
+    {
+      "name": "governing_law",
+      "label": "Governing Law",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "dispute_resolution_method",
+      "label": "Dispute Resolution Method",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Litigation",
+        "Arbitration"
+      ]
+    },
+    {
+      "name": "front_page_email_addresses",
+      "label": "Front Page Email Addresses",
+      "type": "text",
+      "required": false,
+      "help": "Used in Notices clause; can default to Party A/Party B emails."
+    },
+    {
+      "name": "special_provisions",
+      "label": "Special Provisions",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

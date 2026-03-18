@@ -1,0 +1,19 @@
+# QUESTIONNAIRE_FIELDS (NDA Drafting Inputs)
+
+- {{PARTY_1_NAME}}
+- {{PARTY_1_ENTITY_DETAILS}}
+- {{PARTY_1_EMAIL}}
+- {{PARTY_2_NAME}}
+- {{PARTY_2_ENTITY_DETAILS}}
+- {{PARTY_2_EMAIL}}
+- {{PURPOSE}}
+- {{CONFIDENTIALITY_PERIOD_NUMBER}}
+- {{CONFIDENTIALITY_PERIOD_UNIT}}
+- {{GOVERNING_LAW}}
+- {{DISPUTE_RESOLUTION_METHOD}}
+- {{SPECIAL_PROVISIONS}}
+- {{PARTIES_FRONT_PAGE_EMAIL_ADDRESSES}}
+
+Notes:
+- Keep {{GOVERNING_LAW}} and {{DISPUTE_RESOLUTION_METHOD}} as placeholders only (no defaults).
+- Signature/execution blocks are excluded from CLEAN_TEXT and CHUNK_READY; keep signature placeholders in a separate OUTPUT_TEMPLATE if needed.

@@ -1,0 +1,148 @@
+id,source,source_doc,nda_type,jurisdiction,original_clause_name,clause_name,clause_type,variant_id,sort_order,text,placeholders_present
+oneNDA_v2.1_mutual::PARTIES,OneNDA,oneNDA_v2.1_mutual,Mutual,,PARTIES_AND_EXECUTION,PARTIES,PARTIES,PARTIES_1,1,"PARTIES AND EXECUTION
+{{PARTY_1_NAME}}
+Entity details: {{PARTY_1_ENTITY_DETAILS}}
+Email: {{PARTY_1_EMAIL}}
+
+{{PARTY_2_NAME}}
+Entity details: {{PARTY_2_ENTITY_DETAILS}}
+Email: {{PARTY_2_EMAIL}}",{{PARTY_1_EMAIL}};{{PARTY_1_ENTITY_DETAILS}};{{PARTY_1_NAME}};{{PARTY_2_EMAIL}};{{PARTY_2_ENTITY_DETAILS}};{{PARTY_2_NAME}}
+oneNDA_v2.1_mutual::CONFIDENTIAL_INFORMATION,OneNDA,oneNDA_v2.1_mutual,Mutual,,CONFIDENTIAL_INFORMATION,CONFIDENTIAL_INFORMATION,CONFIDENTIAL_INFORMATION,CONFINFO_1,2,"1. What is Confidential Information?
+(a) Confidential Information means information that is disclosed:
+(i) by a party to this Agreement (the Discloser) or on the Discloser’s behalf by its authorised representatives or its Affiliates,
+(ii) to the other party to this Agreement (the Receiver), its Affiliates or Permitted Receivers, and
+(iii) in connection with {{PURPOSE}}.
+
+(b) Affiliates means any:
+(i) entity that directly or indirectly controls, is controlled by, is under common control with or is otherwise in the same group of entities as a party to this Agreement, or
+(ii) fund or limited partnership that is managed or advised, or whose general partner or manager is managed or advised, by the Receiver or its Affiliate or which the Receiver or its Affiliate controls.
+
+(c) Permitted Receivers means the Receiver’s Affiliates and the Receiver’s or its Affiliates’ officers, employees, members, representatives, professional advisors, agents and subcontractors.
+
+(d) Confidential Information does not include information that is:
+(i) in the public domain not by breach of this Agreement,
+(ii) known by the Receiver or its Permitted Receivers at the time of disclosure,
+(iii) lawfully obtained by the Receiver or its Permitted Receivers from a third party other than through a breach of confidence,
+(iv) independently developed by the Receiver, or
+(v) expressly indicated by the Discloser as not confidential.",{{PURPOSE}}
+oneNDA_v2.1_mutual::PERMITTED_DISCLOSURES,OneNDA,oneNDA_v2.1_mutual,Mutual,,PERMITTED_DISCLOSURES,PERMITTED_DISCLOSURES,PERMITTED_DISCLOSURES,PERMDISC_1,3,"2. Who can I share it with?
+(a) The Receiver may share the Confidential Information with its Permitted Receivers, but only if they:
+(i) need to know it, and only use it, for {{PURPOSE}}, and
+(ii) have agreed to keep it confidential and restrict its use to the same extent that the Receiver has.
+
+(b) The Receiver is liable for its breach of this Agreement and any act or omission by a Permitted Receiver which would constitute a breach of this Agreement if it were a party to it.
+
+(c) The Receiver may share the Confidential Information if required by law or regulation but must promptly notify the Discloser of the requirement if allowed by law or regulation.",{{PURPOSE}}
+oneNDA_v2.1_mutual::OBLIGATIONS,OneNDA,oneNDA_v2.1_mutual,Mutual,,RECEIVER_OBLIGATIONS,OBLIGATIONS,OBLIGATIONS,OBLIG_1,4,"3. What are my obligations?
+The Receiver must:
+(a) only use the Confidential Information for {{PURPOSE}},
+(b) keep the Confidential Information secure and confidential and only disclose it as allowed by this Agreement,
+(c) promptly notify the Discloser if it becomes aware of a breach of this Agreement, and
+(d) within thirty days of the Discloser’s request, take reasonable steps to destroy or erase any Confidential Information it holds, except the Receiver may retain copies of Confidential Information:
+(i) that are securely stored in archival or computer back-up systems,
+(ii) to meet legal or regulatory obligations, or
+(iii) in accordance with bona fide record retention policies,
+subject to this Agreement’s terms.",{{PURPOSE}}
+oneNDA_v2.1_mutual::TERM_AND_SURVIVAL,OneNDA,oneNDA_v2.1_mutual,Mutual,,TERM_AND_TERMINATION,TERM_AND_SURVIVAL,TERM_AND_SURVIVAL,TERM_1,5,"4. How long do my obligations last?
+(a) The Receiver’s obligations in relation to Confidential Information start on the date Confidential Information is disclosed and last until the end of the Confidentiality Period ({{CONFIDENTIALITY_PERIOD_NUMBER}} {{CONFIDENTIALITY_PERIOD_UNIT}}).
+(b) A party may terminate this Agreement with thirty days’ prior written notice, but termination will not affect the parties’ obligations in relation to Confidential Information disclosed before termination, which continue until the Confidentiality Period expires.",{{CONFIDENTIALITY_PERIOD_NUMBER}};{{CONFIDENTIALITY_PERIOD_UNIT}}
+oneNDA_v2.1_mutual::NOTICES,OneNDA,oneNDA_v2.1_mutual,Mutual,,NOTICES,NOTICES,NOTICES,NOTICE_1,6,5(a) Notices. Formal notices under this Agreement must be in writing and sent to the email addresses on the Agreement’s front page ({{PARTIES_FRONT_PAGE_EMAIL_ADDRESSES}}) as may be updated by a party to the other in writing.,{{PARTIES_FRONT_PAGE_EMAIL_ADDRESSES}}
+oneNDA_v2.1_mutual::THIRD_PARTY_RIGHTS,OneNDA,oneNDA_v2.1_mutual,Mutual,,THIRD_PARTIES,THIRD_PARTY_RIGHTS,THIRD_PARTY_RIGHTS,TPR_1,7,"5(b) Third parties. Except for the Discloser’s Affiliates, no one other than a party to this Agreement has the right to enforce any of its terms.",
+oneNDA_v2.1_mutual::ENTIRE_AGREEMENT,OneNDA,oneNDA_v2.1_mutual,Mutual,,ENTIRE_AGREEMENT,ENTIRE_AGREEMENT,ENTIRE_AGREEMENT,ENTIRE_1,8,5(c) Entire agreement. This Agreement supersedes all prior discussions and agreements and constitutes the entire agreement between the parties with respect to its subject matter and no party has relied on any statement or representation of any person in entering into this Agreement.,
+oneNDA_v2.1_mutual::AMENDMENTS,OneNDA,oneNDA_v2.1_mutual,Mutual,,AMENDMENTS,AMENDMENTS,AMENDMENTS,AMEND_1,9,5(d) Amendments. Any amendments to this Agreement must be agreed in writing.,
+oneNDA_v2.1_mutual::ASSIGNMENT,OneNDA,oneNDA_v2.1_mutual,Mutual,,ASSIGNMENT,ASSIGNMENT,ASSIGNMENT,ASSIGN_1,10,5(e) Assignment. No party can assign this Agreement to anyone else without the other parties’ consent.,
+oneNDA_v2.1_mutual::WAIVER,OneNDA,oneNDA_v2.1_mutual,Mutual,,WAIVER,WAIVER,WAIVER,WAIVER_1,11,"5(f) Waiver. If a party fails to enforce a right under this Agreement, that is not a waiver of that right at any time.",
+oneNDA_v2.1_mutual::EQUITABLE_RELIEF,OneNDA,oneNDA_v2.1_mutual,Mutual,,EQUITABLE_RELIEF,EQUITABLE_RELIEF,EQUITABLE_RELIEF,EQUIT_1,12,5(g) Equitable relief. The Discloser may seek injunctive relief or specific performance to enforce its rights under this Agreement.,
+oneNDA_v2.1_mutual::COUNTERPARTS,OneNDA,oneNDA_v2.1_mutual,Mutual,,COUNTERPARTS,COUNTERPARTS,COUNTERPARTS,COUNTER_1,13,5(h) Counterparts. This Agreement may be executed in any number of counterparts and this has the same effect as if the signatures on the counterparts were on a single copy of this Agreement.,
+oneNDA_v2.1_mutual::GOVERNING_LAW,OneNDA,oneNDA_v2.1_mutual,Mutual,,GOVERNING_LAW,GOVERNING_LAW,GOVERNING_LAW,GOVLAW_GENERIC_1,14,5(i) Governing Law. The Governing Law (excluding any conflicts of laws principles) applies to this Agreement and related issues.,
+oneNDA_v2.1_mutual::DISPUTE_RESOLUTION,OneNDA,oneNDA_v2.1_mutual,Mutual,,DISPUTE_RESOLUTION,DISPUTE_RESOLUTION,DISPUTE_RESOLUTION,DISPUTE_GENERIC_1,15,5(j) Dispute Resolution. Any dispute arising in connection with this Agreement must only be resolved by the Dispute Resolution Method.,
+Unilateral_oneNDA_v0.1::PARTIES,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,PARTIES_AND_EXECUTION,PARTIES,PARTIES,PARTIES_1,1,"Unilateral Non-Disclosure Agreement
+
+PARTIES AND EXECUTION
+
+Discloser
+{{DISCLOSER_NAME}}
+Entity details: {{DISCLOSER_ENTITY_DETAILS}}
+Email: {{DISCLOSER_EMAIL}}
+
+Receiver
+{{RECEIVER_NAME}}
+Entity details: {{RECEIVER_ENTITY_DETAILS}}
+Email: {{RECEIVER_EMAIL}}",{{DISCLOSER_ENTITY_DETAILS}};{{DISCLOSER_EMAIL}};{{DISCLOSER_NAME}};{{RECEIVER_ENTITY_DETAILS}};{{RECEIVER_EMAIL}};{{RECEIVER_NAME}}
+Unilateral_oneNDA_v0.1::TERMS_INTRO,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,TERMS_INTRO,TERMS_INTRO,TERMS_INTRO,TERMS_INTRO_1,2,"TERMS
+In consideration for Discloser disclosing Confidential Information to Receiver, Receiver unilaterally agrees as follows:",
+Unilateral_oneNDA_v0.1::CONFIDENTIAL_INFORMATION,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,CONFIDENTIAL_INFORMATION,CONFIDENTIAL_INFORMATION,CONFIDENTIAL_INFORMATION,CONFINFO_1,3,"1. What is Confidential Information?
+
+Confidential Information means information that is disclosed:
+
+(a) by a party to this Agreement (the Discloser) or on the Discloser’s behalf by its authorised representatives or its Affiliates,
+
+(b) to the other party to this Agreement (the Receiver), its Affiliates or Permitted Receivers, and
+
+(c) in connection with {{PURPOSE}}.
+
+Affiliates means any:
+
+(a) entity that directly or indirectly controls, is controlled by, is under common control with or is otherwise in the same group of entities as a party to this Agreement, or
+
+(b) fund or limited partnership that is managed or advised, or whose general partner or manager is managed or advised, by the Receiver or its Affiliate or which the Receiver or its Affiliate controls.
+
+Permitted Receivers means the Receiver’s Affiliates and the Receiver’s or its Affiliates’ officers, employees, members, representatives, professional advisors, agents and subcontractors.
+
+Confidential Information does not include information that is:
+
+(a) in the public domain not by breach of this Agreement,
+
+(b) known by the Receiver or its Permitted Receivers at the time of disclosure,
+
+(c) lawfully obtained by the Receiver or its Permitted Receivers from a third party other than through a breach of confidence,
+
+(d) independently developed by the Receiver, or
+
+(e) expressly indicated by the Discloser as not confidential.",{{PURPOSE}}
+Unilateral_oneNDA_v0.1::PERMITTED_DISCLOSURES,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,PERMITTED_DISCLOSURES,PERMITTED_DISCLOSURES,PERMITTED_DISCLOSURES,PERMDISC_1,4,"2. Who can I share it with?
+
+The Receiver may share the Confidential Information with its Permitted Receivers, but only if they:
+
+(a) need to know it, and only use it, for {{PURPOSE}}, and
+
+(b) have agreed to keep it confidential and restrict its use to the same extent that the Receiver has.
+
+The Receiver is liable for its breach of this Agreement and any act or omission by a Permitted Receiver which would constitute a breach of this Agreement if it were a party to it.
+
+The Receiver may share the Confidential Information if required by law or regulation but must promptly notify the Discloser of the requirement if allowed by law or regulation.",{{PURPOSE}}
+Unilateral_oneNDA_v0.1::OBLIGATIONS,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,OBLIGATIONS,OBLIGATIONS,OBLIGATIONS,OBLIG_1,5,"3. What are my obligations?
+
+The Receiver must:
+
+(a) only use the Confidential Information for {{PURPOSE}},
+
+(b) keep the Confidential Information secure and confidential and only disclose it as allowed by this Agreement,
+
+(c) promptly notify the Discloser if it becomes aware of a breach of this Agreement, and
+
+(d) within thirty days of the Discloser’s request, take reasonable steps to destroy or erase any Confidential Information it holds, except the Receiver may retain copies of Confidential Information:
+
+(i) that are securely stored in archival or computer back-up systems,
+
+(ii) to meet legal or regulatory obligations, or
+
+(iii) in accordance with bona fide record retention policies,
+
+subject to this Agreement’s terms.",{{PURPOSE}}
+Unilateral_oneNDA_v0.1::TERM_AND_SURVIVAL,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,TERM_AND_SURVIVAL,TERM_AND_SURVIVAL,TERM_AND_SURVIVAL,TERM_1,6,"4. How long do my obligations last?
+
+The Receiver’s obligations in relation to Confidential Information start on the date Confidential Information is disclosed and last until the end of the Confidentiality Period ({{CONFIDENTIALITY_PERIOD_NUMBER}} {{CONFIDENTIALITY_PERIOD_UNIT}}).
+
+A party may terminate this Agreement with thirty days’ prior written notice, but termination will not affect the parties’ obligations in relation to Confidential Information disclosed before termination, which continue until the Confidentiality Period expires.",{{CONFIDENTIALITY_PERIOD_NUMBER}};{{CONFIDENTIALITY_PERIOD_UNIT}}
+Unilateral_oneNDA_v0.1::NOTICES,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,NOTICES,NOTICES,NOTICES,NOTICE_1,7,"5. Other important information
+
+Notices. Formal notices under this Agreement must be in writing and sent to the email addresses on the Agreement’s front page ({{FRONT_PAGE_EMAIL_ADDRESSES}}) as may be updated by a party to the other in writing.",{{FRONT_PAGE_EMAIL_ADDRESSES}}
+Unilateral_oneNDA_v0.1::THIRD_PARTY_RIGHTS,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,THIRD_PARTY_RIGHTS,THIRD_PARTY_RIGHTS,THIRD_PARTY_RIGHTS,TPR_1,8,"Third parties. Except for the Discloser’s Affiliates, no one other than a party to this Agreement has the right to enforce any of its terms.",
+Unilateral_oneNDA_v0.1::ENTIRE_AGREEMENT,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,ENTIRE_AGREEMENT,ENTIRE_AGREEMENT,ENTIRE_AGREEMENT,ENTIRE_1,9,Entire agreement. This Agreement supersedes all prior discussions and agreements and constitutes the entire agreement between the parties with respect to its subject matter and no party has relied on any statement or representation of any person in entering into this Agreement.,
+Unilateral_oneNDA_v0.1::AMENDMENTS,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,AMENDMENTS,AMENDMENTS,AMENDMENTS,AMEND_1,10,Amendments. Any amendments to this Agreement must be agreed in writing.,
+Unilateral_oneNDA_v0.1::ASSIGNMENT,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,ASSIGNMENT,ASSIGNMENT,ASSIGNMENT,ASSIGN_1,11,Assignment. No party can assign this Agreement to anyone else without the other parties’ consent.,
+Unilateral_oneNDA_v0.1::WAIVER,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,WAIVER,WAIVER,WAIVER,WAIVER_1,12,"Waiver. If a party fails to enforce a right under this Agreement, that is not a waiver of that right at any time.",
+Unilateral_oneNDA_v0.1::EQUITABLE_RELIEF,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,EQUITABLE_RELIEF,EQUITABLE_RELIEF,EQUITABLE_RELIEF,EQUIT_1,13,Equitable relief. The Discloser may seek injunctive relief or specific performance to enforce its rights under this Agreement.,
+Unilateral_oneNDA_v0.1::GOVERNING_LAW,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,GOVERNING_LAW,GOVERNING_LAW,GOVERNING_LAW,GOVLAW_GENERIC_1,14,Governing Law. The {{GOVERNING_LAW}} (excluding any conflicts of laws principles) applies to this Agreement and related issues.,{{GOVERNING_LAW}}
+Unilateral_oneNDA_v0.1::DISPUTE_RESOLUTION,oneNDA,Unilateral_oneNDA_v0.1,Unilateral,,DISPUTE_RESOLUTION,DISPUTE_RESOLUTION,DISPUTE_RESOLUTION,DISPUTE_GENERIC_1,15,Dispute Resolution. Any dispute arising in connection with this Agreement must only be resolved by the {{DISPUTE_RESOLUTION_METHOD}}.,{{DISPUTE_RESOLUTION_METHOD}}

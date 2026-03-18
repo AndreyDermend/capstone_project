@@ -1,0 +1,32 @@
+{
+  "Mutual": {
+    "party_a_name": "{{PARTY_1_NAME}}",
+    "party_a_entity_details": "{{PARTY_1_ENTITY_DETAILS}}",
+    "party_a_email": "{{PARTY_1_EMAIL}}",
+    "party_b_name": "{{PARTY_2_NAME}}",
+    "party_b_entity_details": "{{PARTY_2_ENTITY_DETAILS}}",
+    "party_b_email": "{{PARTY_2_EMAIL}}",
+    "purpose": "{{PURPOSE}}",
+    "confidentiality_period_number": "{{CONFIDENTIALITY_PERIOD_NUMBER}}",
+    "confidentiality_period_unit": "{{CONFIDENTIALITY_PERIOD_UNIT}}",
+    "governing_law": "{{GOVERNING_LAW}}",
+    "dispute_resolution_method": "{{DISPUTE_RESOLUTION_METHOD}}",
+    "front_page_email_addresses": "{{PARTIES_FRONT_PAGE_EMAIL_ADDRESSES}}",
+    "special_provisions": "{{SPECIAL_PROVISIONS}}"
+  },
+  "Unilateral": {
+    "party_a_name": "{{DISCLOSER_NAME}}",
+    "party_a_entity_details": "{{DISCLOSER_ENTITY_DETAILS}}",
+    "party_a_email": "{{DISCLOSER_EMAIL}}",
+    "party_b_name": "{{RECEIVER_NAME}}",
+    "party_b_entity_details": "{{RECEIVER_ENTITY_DETAILS}}",
+    "party_b_email": "{{RECEIVER_EMAIL}}",
+    "purpose": "{{PURPOSE}}",
+    "confidentiality_period_number": "{{CONFIDENTIALITY_PERIOD_NUMBER}}",
+    "confidentiality_period_unit": "{{CONFIDENTIALITY_PERIOD_UNIT}}",
+    "governing_law": "{{GOVERNING_LAW}}",
+    "dispute_resolution_method": "{{DISPUTE_RESOLUTION_METHOD}}",
+    "front_page_email_addresses": "{{FRONT_PAGE_EMAIL_ADDRESSES}}",
+    "special_provisions": "{{SPECIAL_PROVISIONS}}"
+  }
+}
