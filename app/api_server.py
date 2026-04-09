@@ -19,8 +19,9 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 # ---------------------------------------------------------------------------
 # Project imports
@@ -39,6 +40,10 @@ from run_intake_loop import (
     normalize_value_for_field,
 )
 from assemble_contract import assemble_contract, load_resources
+from contract_docx import generate_contract_docx
+
+OUTPUT_DIR = ROOT / "output"
+OUTPUT_DIR.mkdir(exist_ok=True)
 
 # ---------------------------------------------------------------------------
 # App
@@ -195,52 +200,52 @@ def extract_state_from_history(messages: List[dict]) -> dict:
     return state
 
 
-def format_citations(
-    clauses: List[dict],
-    rag_metadata: Optional[Dict[str, dict]],
-    verified_answers: Dict[str, Any],
+def assemble_and_generate_docx(
+    verified_answers: dict,
+    evidence: dict,
     contract_type: str,
-) -> str:
-    """Build a citations section for the response."""
-    lines = []
+    label: str,
+    port: int = 8001,
+) -> Tuple[str, str]:
+    """Assemble contract, generate DOCX, return (summary_markdown, download_url)."""
+    final = add_derived_defaults(dict(verified_answers), contract_type)
+    result = assemble_contract(final, contract_type, use_rag=True)
+    contract_text, unresolved, clauses, rag_meta = (
+        result if len(result) == 4 else (*result, None)
+    )
 
-    # Clause source table
-    lines.append("\n---\n")
-    lines.append("## Clause Sources & Citations\n")
-    lines.append("| # | Clause | Source Template | Variant | Selection | Score |")
-    lines.append("|---|--------|---------------|---------|-----------|-------|")
+    # Generate DOCX
+    docx_path = generate_contract_docx(
+        contract_text, clauses, rag_meta, final, evidence,
+        contract_type, label,
+    )
+    filename = docx_path.name
+    download_url = f"http://localhost:{port}/download/{filename}"
 
-    for i, clause in enumerate(clauses, 1):
-        cname = clause.get("clause_name", "?")
-        source = clause.get("source", "Unknown")
-        vid = clause.get("variant_id", "?")
+    # Build summary
+    n_clauses = len(clauses)
+    sources = sorted(set(c.get("source", "?") for c in clauses))
+    rag_count = sum(1 for m in (rag_meta or {}).values() if m.get("method") == "rag")
 
-        if rag_metadata and cname in rag_metadata:
-            meta = rag_metadata[cname]
-            method = meta["method"].upper()
-            score = f"{meta['score']:.0%}"
-            candidates = meta["num_candidates"]
-            selection = f"{method} ({candidates} variants)"
-        else:
-            method = "DEFAULT"
-            score = "N/A"
-            selection = "First match"
+    summary = (
+        f"Your **{label}** is ready!\n\n"
+        f"### Assembly Summary\n\n"
+        f"- **{n_clauses} clauses** from {len(sources)} templates ({', '.join(sources)})\n"
+        f"- **{rag_count}** selected via RAG semantic matching\n"
+        f"- **{n_clauses - rag_count}** selected deterministically\n\n"
+        f"### Download\n\n"
+        f"**[Download {label} (DOCX)]({download_url})**\n\n"
+        f"The document includes:\n"
+        f"- Professional formatting (Times New Roman)\n"
+        f"- Blue highlighted user-provided values with field markers\n"
+        f"- Source citation on every clause (template, variant, RAG score)\n"
+        f"- Full audit appendix with clause sources + extraction evidence\n"
+    )
 
-        lines.append(f"| {i} | {cname} | {source} | `{vid}` | {selection} | {score} |")
+    if unresolved:
+        summary += f"\n**Warning:** {len(unresolved)} unresolved placeholders: {', '.join(unresolved)}\n"
 
-    # Placeholder substitutions table
-    lines.append("\n## Placeholder Substitutions\n")
-    lines.append("| Field | Value | Evidence |")
-    lines.append("|-------|-------|----------|")
-
-    for f in schema_fields(contract_type):
-        fname = get_field_name(f)
-        val = verified_answers.get(fname, "")
-        if val:
-            label = f.get("label", fname)
-            lines.append(f"| {label} | {val} | User-provided |")
-
-    return "\n".join(lines)
+    return summary, final
 
 
 def embed_state(
@@ -300,16 +305,19 @@ def make_response(content: str) -> dict:
 # ---------------------------------------------------------------------------
 # Streaming helpers
 # ---------------------------------------------------------------------------
-def stream_text(text: str, chunk_size: int = 40):
+import asyncio
+
+async def stream_text(text: str, chunk_size: int = 40):
     """Yield SSE chunks for a block of text."""
     for i in range(0, len(text), chunk_size):
         yield make_chunk(text[i : i + chunk_size])
-        time.sleep(0.01)
+        await asyncio.sleep(0.005)
 
 
-def stream_response(text: str):
+async def stream_response(text: str):
     """Full streaming response with stop."""
-    yield from stream_text(text)
+    async for chunk in stream_text(text):
+        yield chunk
     yield make_chunk("", finish_reason="stop")
     yield "data: [DONE]\n\n"
 
@@ -346,20 +354,10 @@ def handle_initial_prompt(prompt: str, contract_type: str, stream: bool):
         if not follow_ups:
             # All fields extracted — assemble immediately
             yield from stream_text("All required fields extracted. Assembling contract with RAG...\n\n")
-            final_answers = add_derived_defaults(dict(verified_answers), contract_type)
-            result = assemble_contract(final_answers, contract_type, use_rag=True)
-            contract_text, unresolved, clauses, rag_metadata = (
-                result if len(result) == 4 else (*result, None)
+            summary, final_answers = assemble_and_generate_docx(
+                verified_answers, evidence, contract_type, label
             )
-
-            yield from stream_text("---\n\n")
-            yield from stream_text(f"## {label}\n\n")
-            yield from stream_text(f"```\n{contract_text}\n```\n\n")
-
-            citations = format_citations(
-                clauses, rag_metadata, final_answers, contract_type
-            )
-            yield from stream_text(citations)
+            yield from stream_text(summary)
             yield from stream_text("\n\n")
             yield from stream_text(
                 embed_state(contract_type, final_answers, [], "complete")
@@ -441,20 +439,10 @@ def handle_follow_up(state: dict, user_text: str, stream: bool):
         else:
             # All fields collected — assemble
             yield from stream_text("All fields collected! Assembling your contract with RAG clause selection...\n\n")
-            final_answers = add_derived_defaults(dict(verified_answers), contract_type)
-            result = assemble_contract(final_answers, contract_type, use_rag=True)
-            contract_text, unresolved, clauses, rag_metadata = (
-                result if len(result) == 4 else (*result, None)
+            summary, final_answers = assemble_and_generate_docx(
+                verified_answers, {}, contract_type, label
             )
-
-            yield from stream_text("---\n\n")
-            yield from stream_text(f"## {label}\n\n")
-            yield from stream_text(f"```\n{contract_text}\n```\n\n")
-
-            citations = format_citations(
-                clauses, rag_metadata, final_answers, contract_type
-            )
-            yield from stream_text(citations)
+            yield from stream_text(summary)
             yield from stream_text("\n\n")
             yield from stream_text(
                 embed_state(contract_type, final_answers, [], "complete")
@@ -541,14 +529,27 @@ async def chat_completions(request: Request):
     elif state["phase"] == "complete":
         # Contract already assembled — offer to start a new one
         text = (
-            "Your contract has already been assembled above. You can:\n\n"
-            "- **Copy** the contract text from the code block\n"
-            "- **Start a new contract** — just describe what you need\n"
-            "- **Ask questions** about the clauses or sources used"
+            "Your contract has been generated! Check the download link above.\n\n"
+            "To draft a new contract, just describe what you need."
         )
         if stream:
             return StreamingResponse(stream_response(text), media_type="text/event-stream")
         return JSONResponse(make_response(text))
+
+
+# ---------------------------------------------------------------------------
+# File download — runs in threadpool to avoid blocking during SSE streams
+# ---------------------------------------------------------------------------
+@app.get("/download/{filename}")
+async def download_file(filename: str):
+    filepath = OUTPUT_DIR / filename
+    if not filepath.exists() or not filename.endswith(".docx"):
+        return JSONResponse({"error": "File not found"}, status_code=404)
+    return FileResponse(
+        path=str(filepath),
+        filename=filename,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    )
 
 
 # ---------------------------------------------------------------------------
