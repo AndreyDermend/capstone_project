@@ -1,0 +1,18 @@
+{
+  "Standard": {
+    "client_name": "{{CLIENT_NAME}}",
+    "client_address": "{{CLIENT_ADDRESS}}",
+    "contractor_name": "{{CONTRACTOR_NAME}}",
+    "contractor_address": "{{CONTRACTOR_ADDRESS}}",
+    "services_description": "{{SERVICES_DESCRIPTION}}",
+    "effective_date": "{{EFFECTIVE_DATE}}",
+    "compensation_amount": "{{COMPENSATION_AMOUNT}}",
+    "payment_schedule": "{{PAYMENT_SCHEDULE}}",
+    "termination_notice_days": "{{TERMINATION_NOTICE_DAYS}}",
+    "governing_law": "{{GOVERNING_LAW}}",
+    "ip_ownership": "{{IP_OWNERSHIP}}",
+    "term_end_date": "{{TERM_END_DATE}}",
+    "dispute_resolution_method": "{{DISPUTE_RESOLUTION_METHOD}}",
+    "special_provisions": "{{SPECIAL_PROVISIONS}}"
+  }
+}

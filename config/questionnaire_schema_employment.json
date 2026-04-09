@@ -1,0 +1,132 @@
+{
+  "version": 1,
+  "description": "Canonical questionnaire schema for Employment Agreements.",
+  "fields": [
+    {
+      "name": "employment_type",
+      "label": "Employment Agreement Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Standard"
+      ]
+    },
+    {
+      "name": "employer_name",
+      "label": "Employer Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "employer_address",
+      "label": "Employer Address",
+      "type": "text",
+      "required": true,
+      "help": "Full address: street, city, state, zip"
+    },
+    {
+      "name": "employee_name",
+      "label": "Employee Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "employee_address",
+      "label": "Employee Address",
+      "type": "text",
+      "required": true,
+      "help": "Full address: street, city, state, zip"
+    },
+    {
+      "name": "job_title",
+      "label": "Job Title",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "job_duties",
+      "label": "Description of Job Duties",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "name": "start_date",
+      "label": "Employment Start Date",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "employment_basis",
+      "label": "Employment Basis",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Full-Time",
+        "Part-Time",
+        "At-Will",
+        "Fixed-Term"
+      ]
+    },
+    {
+      "name": "compensation_amount",
+      "label": "Compensation Amount",
+      "type": "text",
+      "required": true,
+      "help": "e.g., $75,000/year or $25/hour"
+    },
+    {
+      "name": "pay_frequency",
+      "label": "Pay Frequency",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Weekly",
+        "Bi-Weekly",
+        "Semi-Monthly",
+        "Monthly"
+      ]
+    },
+    {
+      "name": "work_location",
+      "label": "Primary Work Location",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "termination_notice_days",
+      "label": "Termination Notice Period (days)",
+      "type": "number",
+      "required": true
+    },
+    {
+      "name": "governing_law",
+      "label": "Governing Law (State)",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "term_end_date",
+      "label": "Employment End Date (Fixed-Term only)",
+      "type": "text",
+      "required": false,
+      "help": "Leave blank for at-will employment"
+    },
+    {
+      "name": "dispute_resolution_method",
+      "label": "Dispute Resolution Method",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Arbitration",
+        "Litigation",
+        "Mediation"
+      ]
+    },
+    {
+      "name": "special_provisions",
+      "label": "Special Provisions",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

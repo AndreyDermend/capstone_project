@@ -1,0 +1,20 @@
+{
+  "Standard": {
+    "client_name": "{{CLIENT_NAME}}",
+    "client_address": "{{CLIENT_ADDRESS}}",
+    "client_email": "{{CLIENT_EMAIL}}",
+    "consultant_name": "{{CONSULTANT_NAME}}",
+    "consultant_address": "{{CONSULTANT_ADDRESS}}",
+    "consultant_email": "{{CONSULTANT_EMAIL}}",
+    "effective_date": "{{EFFECTIVE_DATE}}",
+    "services_description": "{{SERVICES_DESCRIPTION}}",
+    "compensation_amount": "{{COMPENSATION_AMOUNT}}",
+    "payment_schedule": "{{PAYMENT_SCHEDULE}}",
+    "term_end_date": "{{TERM_END_DATE}}",
+    "termination_notice_days": "{{TERMINATION_NOTICE_DAYS}}",
+    "governing_law": "{{GOVERNING_LAW}}",
+    "ip_ownership": "{{IP_OWNERSHIP}}",
+    "dispute_resolution_method": "{{DISPUTE_RESOLUTION_METHOD}}",
+    "special_provisions": "{{SPECIAL_PROVISIONS}}"
+  }
+}

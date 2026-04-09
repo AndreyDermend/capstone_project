@@ -1,0 +1,41 @@
+{
+  "description": "Registry of supported contract types. Each entry maps a contract type to its config files, clause library, and questionnaire schema.",
+  "contract_types": {
+    "NDA": {
+      "label": "Non-Disclosure Agreement",
+      "subtypes": ["Mutual", "Unilateral"],
+      "questionnaire_schema": "questionnaire_schema.json",
+      "assembly_order": "assembly_order.json",
+      "placeholder_mappings": "placeholder_mappings.json",
+      "clause_library": "master_clause_library.jsonl",
+      "subtype_field": "nda_type"
+    },
+    "ConsultingAgreement": {
+      "label": "Consulting Agreement",
+      "subtypes": ["Standard"],
+      "questionnaire_schema": "questionnaire_schema_consulting.json",
+      "assembly_order": "assembly_order_consulting.json",
+      "placeholder_mappings": "placeholder_mappings_consulting.json",
+      "clause_library": "master_clause_library_consulting.jsonl",
+      "subtype_field": "consulting_type"
+    },
+    "EmploymentAgreement": {
+      "label": "Employment Agreement",
+      "subtypes": ["Standard"],
+      "questionnaire_schema": "questionnaire_schema_employment.json",
+      "assembly_order": "assembly_order_employment.json",
+      "placeholder_mappings": "placeholder_mappings_employment.json",
+      "clause_library": "master_clause_library_employment.jsonl",
+      "subtype_field": "employment_type"
+    },
+    "ServiceAgreement": {
+      "label": "Service Agreement",
+      "subtypes": ["Standard"],
+      "questionnaire_schema": "questionnaire_schema_service.json",
+      "assembly_order": "assembly_order_service.json",
+      "placeholder_mappings": "placeholder_mappings_service.json",
+      "clause_library": "master_clause_library_service.jsonl",
+      "subtype_field": "service_type"
+    }
+  }
+}

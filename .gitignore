@@ -3,3 +3,16 @@ __pycache__/
 .env
 .venv/
 .DS_Store
+
+# Cached embeddings (regenerated on first run)
+*.embeddings.npz
+
+# Generated output
+output/
+
+# Claude Code session data
+.claude/
+
+# Planning docs (not part of the app)
+PHASE_4_5_PLAN.md
+baseline_output.txt

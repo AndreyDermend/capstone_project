@@ -1,0 +1,131 @@
+{
+  "version": 1,
+  "description": "Canonical questionnaire schema for Consulting Agreements.",
+  "fields": [
+    {
+      "name": "consulting_type",
+      "label": "Consulting Agreement Type",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Standard"
+      ]
+    },
+    {
+      "name": "client_name",
+      "label": "Client Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "client_address",
+      "label": "Client Address",
+      "type": "text",
+      "required": true,
+      "help": "Full address: street, city, state, zip"
+    },
+    {
+      "name": "client_email",
+      "label": "Client Email",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "consultant_name",
+      "label": "Consultant Name",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "consultant_address",
+      "label": "Consultant Address",
+      "type": "text",
+      "required": true,
+      "help": "Full address: street, city, state, zip"
+    },
+    {
+      "name": "consultant_email",
+      "label": "Consultant Email",
+      "type": "email",
+      "required": true
+    },
+    {
+      "name": "effective_date",
+      "label": "Effective Date",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "services_description",
+      "label": "Description of Services",
+      "type": "textarea",
+      "required": true
+    },
+    {
+      "name": "compensation_amount",
+      "label": "Compensation Amount",
+      "type": "text",
+      "required": true,
+      "help": "e.g., $50,000 or $150/hour"
+    },
+    {
+      "name": "payment_schedule",
+      "label": "Payment Schedule",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Upon Completion",
+        "Net 30",
+        "Monthly",
+        "Milestone-Based"
+      ]
+    },
+    {
+      "name": "term_end_date",
+      "label": "Agreement End Date",
+      "type": "text",
+      "required": true,
+      "help": "Specific date or 'upon completion of services'"
+    },
+    {
+      "name": "termination_notice_days",
+      "label": "Termination Notice Period (days)",
+      "type": "number",
+      "required": true
+    },
+    {
+      "name": "governing_law",
+      "label": "Governing Law (State)",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "ip_ownership",
+      "label": "Intellectual Property Ownership",
+      "type": "select",
+      "required": true,
+      "options": [
+        "Client",
+        "Consultant",
+        "Shared"
+      ]
+    },
+    {
+      "name": "dispute_resolution_method",
+      "label": "Dispute Resolution Method",
+      "type": "select",
+      "required": false,
+      "options": [
+        "Arbitration",
+        "Litigation",
+        "Mediation"
+      ]
+    },
+    {
+      "name": "special_provisions",
+      "label": "Special Provisions",
+      "type": "textarea",
+      "required": false
+    }
+  ]
+}

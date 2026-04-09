@@ -1,0 +1,20 @@
+{
+  "Standard": {
+    "employer_name": "{{EMPLOYER_NAME}}",
+    "employer_address": "{{EMPLOYER_ADDRESS}}",
+    "employee_name": "{{EMPLOYEE_NAME}}",
+    "employee_address": "{{EMPLOYEE_ADDRESS}}",
+    "job_title": "{{JOB_TITLE}}",
+    "job_duties": "{{JOB_DUTIES}}",
+    "start_date": "{{START_DATE}}",
+    "employment_basis": "{{EMPLOYMENT_BASIS}}",
+    "compensation_amount": "{{COMPENSATION_AMOUNT}}",
+    "pay_frequency": "{{PAY_FREQUENCY}}",
+    "work_location": "{{WORK_LOCATION}}",
+    "termination_notice_days": "{{TERMINATION_NOTICE_DAYS}}",
+    "governing_law": "{{GOVERNING_LAW}}",
+    "term_end_date": "{{TERM_END_DATE}}",
+    "dispute_resolution_method": "{{DISPUTE_RESOLUTION_METHOD}}",
+    "special_provisions": "{{SPECIAL_PROVISIONS}}"
+  }
+}
