@@ -1,6 +1,6 @@
 # LexiAgent - Deterministic Contract Drafting with AI Extraction
 
-LexiAgent is a contract drafting system that combines **deterministic clause assembly** with **AI-powered field extraction** and **RAG-based clause selection**. Users describe what contract they need in plain English, and LexiAgent extracts the fields, asks follow-up questions for anything missing, then assembles a complete contract from a governed clause library with full source citations.
+LexiAgent is a contract drafting system that combines **deterministic clause assembly** with **AI-powered field extraction** and **RAG-based clause selection**. Users describe what contract they need in plain English, and LexiAgent extracts the fields, asks follow-up questions for anything missing, then assembles a complete contract from a governed clause library — output as a professional DOCX with full source citations embedded in the document.
 
 ## Architecture
 
@@ -20,7 +20,7 @@ User prompt  -->  AI Extraction (Ollama qwen3:4b)
               Deterministic Assembly (placeholder fill)
                       |
                       v
-              Final Contract + Citations
+              DOCX Contract + Embedded Citations
 ```
 
 **Key design choices:**
@@ -49,68 +49,73 @@ User prompt  -->  AI Extraction (Ollama qwen3:4b)
    ```
 3. **Python packages:**
    ```bash
-   pip3 install ollama numpy fastapi uvicorn gradio
+   pip3 install ollama numpy fastapi uvicorn gradio python-docx
    ```
+4. **Docker Desktop** (for Open WebUI — optional but recommended for demo)
 
 ---
 
-## Quick Start (CLI)
+## Starting & Restarting the System
 
-Run the interactive intake loop directly:
+LexiAgent has 3 services. Each one runs in its own terminal.
 
-```bash
-python3 app/run_intake_loop.py
-```
-
-Select a contract type (1-4), describe what you need, answer follow-ups, and get your contract.
-
----
-
-## Demo Setup: Gradio Web UI (Recommended)
-
-The fastest way to demo LexiAgent. Works on Python 3.9+, no Docker required. Provides a ChatGPT-like interface.
-
-### Step 1: Start Ollama
+### Full startup (first time or after reboot)
 
 ```bash
+# Terminal 1: Ollama (AI models)
 ollama serve
+
+# Terminal 2: LexiAgent API server (connects your code to Open WebUI)
+cd ~/Desktop/Capstone_project
+python3 app/api_server.py
+
+# Terminal 3: Open WebUI (Docker — only needed once, auto-restarts after)
+docker start open-webui
 ```
 
-Verify it's running: `curl http://localhost:11434/api/tags`
+Then open **http://localhost:3000** and select **lexiagent** from the model dropdown.
 
-### Step 2: Launch the Web UI
+### After code changes — restart the API server
 
-```bash
-python3 app/web_ui.py
-```
-
-Open **http://localhost:7860** in your browser. That's it!
-
-**Options:**
-```bash
-python3 app/web_ui.py --port 3000   # custom port
-python3 app/web_ui.py --share        # public URL for remote demos
-```
-
-The `--share` flag generates a public Gradio URL (e.g., `https://xxxxx.gradio.live`) that anyone can access — useful for showing the demo remotely.
-
----
-
-## Alternative: Open WebUI Integration
-
-If you have Docker or Python 3.11+, you can use Open WebUI for a polished ChatGPT-like experience.
-
-### Step 1: Start the LexiAgent API Server
+When you modify any Python file, you must restart the API server for changes to take effect. Open WebUI does NOT need to restart.
 
 ```bash
+# In Terminal 2, press Ctrl+C to stop, then:
 python3 app/api_server.py
 ```
 
-This exposes an OpenAI-compatible API at `http://localhost:8001/v1`.
+Then **start a new chat** in Open WebUI (old conversations cache the previous behavior).
 
-### Step 2: Start Open WebUI
+### Quick reference
 
-**Docker:**
+| Service | How to start | How to restart | Persists? |
+|---------|-------------|----------------|-----------|
+| Ollama | `ollama serve` | Usually stays running, just leave it | Yes — models stay downloaded |
+| LexiAgent API | `python3 app/api_server.py` | Ctrl+C then rerun | No — must restart after code changes |
+| Open WebUI (Docker) | `docker start open-webui` | `docker restart open-webui` | **Yes** — account, settings, and chat history survive restarts and reboots |
+| Docker Desktop | `open -a Docker` | Stays in menu bar | Yes — installed permanently |
+
+---
+
+## First-Time Docker + Open WebUI Setup
+
+Only do this once. After setup, Open WebUI is permanently installed and accessible.
+
+### Step 1: Install Docker Desktop
+
+```bash
+brew install --cask docker
+```
+
+Then launch it:
+```bash
+open -a Docker
+```
+
+Wait for the Docker whale icon in your menu bar to say "Docker Desktop is running" (~30 seconds on first launch). Docker Desktop stays installed permanently — you'll see it in your Applications folder and menu bar.
+
+### Step 2: Install Open WebUI (one-time)
+
 ```bash
 docker run -d \
   -p 3000:8080 \
@@ -121,21 +126,75 @@ docker run -d \
   ghcr.io/open-webui/open-webui:main
 ```
 
-**pip (requires Python 3.11+):**
+This downloads and starts Open WebUI. The `--restart always` flag means it auto-starts whenever Docker Desktop is running. The `-v open-webui:/app/backend/data` flag stores your data in a Docker volume that survives container restarts, updates, and reboots.
+
+### Step 3: Create your account
+
+Open **http://localhost:3000** and create an admin account. This is stored locally — only you can access it.
+
+### Step 4: Connect LexiAgent
+
+1. Make sure the API server is running: `python3 app/api_server.py`
+2. In Open WebUI, go to **Admin Panel** (gear icon, top-right) > **Settings** > **Connections**
+3. Under **OpenAI API**, click **+** to add a connection:
+   - **URL**: `http://host.docker.internal:8001/v1`
+   - **API Key**: `sk-unused` (any non-empty string — our server doesn't check it)
+4. Click the checkmark / **Save**
+5. Go back to chat, click the **model dropdown** at the top — select **lexiagent**
+
+This connection is saved permanently. You won't need to redo it.
+
+### Step 5 (Optional): Make it a desktop app
+
+**Safari:** Open `http://localhost:3000` > **File** > **Add to Dock** > Name it "LexiAgent"
+
+**Chrome:** Open `http://localhost:3000` > **Three dots menu** > **Cast, save, and share** > **Install page as app**
+
+---
+
+## Everyday Usage (after first-time setup)
+
 ```bash
-python3.11 -m pip install open-webui
-python3.11 -m open_webui.main serve --port 3000
+# 1. Make sure Docker Desktop is running (check menu bar for whale icon)
+#    If not: open -a Docker
+
+# 2. Open WebUI should auto-start with Docker. If not:
+docker start open-webui
+
+# 3. Start the LexiAgent API server
+cd ~/Desktop/Capstone_project
+python3 app/api_server.py
+
+# 4. Open http://localhost:3000, select "lexiagent", start chatting
 ```
 
-### Step 3: Connect LexiAgent to Open WebUI
+After code changes, just Ctrl+C the API server and rerun `python3 app/api_server.py`.
 
-1. Open **http://localhost:3000** and create an admin account
-2. Go to **Admin Panel** > **Settings** > **Connections**
-3. Under **OpenAI API**, click **+** to add a connection:
-   - **URL**: `http://host.docker.internal:8001/v1` (Docker) or `http://localhost:8001/v1` (pip)
-   - **API Key**: `sk-unused` (any non-empty string)
-4. Click **Save**
-5. Select **lexiagent** from the model dropdown and start chatting
+---
+
+## Alternative: Gradio Web UI (no Docker needed)
+
+If you don't want Docker, the Gradio UI works on Python 3.9+ with zero extra setup:
+
+```bash
+ollama serve                    # Terminal 1
+python3 app/web_ui.py           # Terminal 2
+# Open http://localhost:7860
+```
+
+For a public URL: `python3 app/web_ui.py --share`
+
+---
+
+## DOCX Output
+
+The generated contract is a professional Word document with:
+- **Times New Roman** formatting with proper headings and numbered clauses
+- **Blue highlighted** user-provided values with field markers (e.g., `[client_name]`)
+- **Source citation** on every clause — template name, variant ID, RAG score
+- **Audit appendix** at the end with two tables:
+  - **Clause Sources** — every clause's template, variant, selection method, and similarity score
+  - **User Input Evidence** — every extracted field with the exact text it was derived from
 
 ---
 
@@ -155,7 +214,7 @@ Starting February 1, 2026. 30 days notice to terminate. California law, mediatio
 for disputes. Client owns all IP.
 ```
 
-**Expected behavior:** Extracts all 12+ fields, assembles immediately with RAG clause selection, shows full citations table.
+**Expected behavior:** Extracts all 12+ fields, assembles immediately, outputs DOCX for download.
 
 ---
 
@@ -169,14 +228,7 @@ I need an NDA between my company Apex Digital and a freelance designer we're
 about to hire. We're based in New York.
 ```
 
-**Expected follow-ups:** The system will ask for:
-- NDA type (Mutual or Unilateral)
-- Your address
-- The designer's name and address
-- Email addresses for both parties
-- Purpose of the NDA
-- Confidentiality period
-- Dispute resolution preference
+**Expected follow-ups:** NDA type, addresses, emails, purpose, confidentiality period, dispute resolution.
 
 **Example follow-up answer:**
 ```
@@ -194,16 +246,12 @@ about to hire. We're based in New York.
 
 ### Demo 3: Employment Agreement (Partial Info)
 
-Shows extraction of what's available + targeted follow-ups for what's missing.
-
 **Prompt:**
 ```
 We're hiring a new marketing director at BrightPath Inc. Sarah Johnson will start
 on March 1st at $145,000 per year. She'll work at our Denver office at 789 Pine St,
 Denver CO 80202. Colorado law governs.
 ```
-
-**Expected behavior:** Extracts employer name, employee name, job title, start date, salary, work location, governing law. Asks follow-ups for: employee address, job duties, employment basis (full-time/part-time), pay frequency, termination notice period.
 
 **Example follow-up answer:**
 ```
@@ -218,14 +266,12 @@ Denver CO 80202. Colorado law governs.
 
 ### Demo 4: Consulting Agreement (Minimal Prompt)
 
-Shows how the system handles very little information gracefully.
-
 **Prompt:**
 ```
 I need a consulting agreement for some data analytics work.
 ```
 
-**Expected behavior:** Extracts almost nothing (maybe just "data analytics" as services). Generates ~12 follow-up questions covering all required fields. No hallucination of names, addresses, or amounts.
+**Expected behavior:** Extracts almost nothing. Generates ~12 follow-up questions. No hallucination.
 
 **Example follow-up answer:**
 ```
@@ -248,33 +294,15 @@ I need a consulting agreement for some data analytics work.
 
 ---
 
-### Demo 5: Quick Type Switching
-
-Show that the same system handles all 4 contract types seamlessly. Try these back-to-back in separate conversations:
-
-```
-NDA between Acme Corp and Beta Labs for a potential acquisition discussion. Mutual. 3 years confidentiality. Delaware law.
-```
-
-```
-Service contract for HVAC maintenance. CoolAir Systems will service our building at 100 Main St monthly for $1,200. Texas law. 15 days notice.
-```
-
----
-
 ## What to Highlight in the Demo
 
-1. **No AI-generated legal text** — Every word in the contract comes from vetted templates. AI only extracts fields and selects variants.
-
-2. **Evidence-gated extraction** — Point out the "Extracted Fields" table. Every value has quoted evidence from the user's original text.
-
-3. **Conservative follow-ups** — When information is missing, the system asks rather than guesses. Show this with Demo 2 or 4.
-
-4. **RAG clause selection** — In the Citations table, point out the "RAG" method and similarity scores. The system picks the best-matching clause variant for the user's context.
-
-5. **Source traceability** — Every clause cites its source template (LawDepot, eForms, PandaDoc, FormSwift). Full audit trail.
-
-6. **Multi-contract support** — Same pipeline, same UI, 4 different contract types. The architecture is designed to scale to more.
+1. **No AI-generated legal text** — Every word in the contract comes from vetted templates.
+2. **Evidence-gated extraction** — Every value has quoted evidence from the user's input.
+3. **Conservative follow-ups** — Missing info = question, never a guess.
+4. **RAG clause selection** — Open the DOCX audit appendix to show per-clause RAG scores.
+5. **Source traceability** — Every clause cites its source template. Full audit trail in the document.
+6. **Multi-contract support** — 4 contract types, same pipeline, same UI.
+7. **Professional DOCX output** — Not raw text; a real document you could send to a lawyer.
 
 ---
 
@@ -304,8 +332,10 @@ Capstone_project/
     api_server.py              # OpenAI-compatible API for Open WebUI
     assemble_contract.py       # Deterministic contract assembler
     clause_rag.py              # RAG clause selection (nomic-embed-text)
+    contract_docx.py           # DOCX generator with embedded citations
     run_intake_loop.py         # AI extraction + follow-up pipeline
     test_extraction.py         # Extraction accuracy tests (16 tests)
+    web_ui.py                  # Gradio chat UI (alternative to Open WebUI)
   config/
     contract_registry.json     # Maps contract types to their configs
     questionnaire_schema_*.json    # Field schemas per contract type
@@ -314,7 +344,7 @@ Capstone_project/
   data/
     clause_library/
       master_clause_library*.jsonl      # Governed clause texts
-      master_clause_library*.npz        # Cached embeddings
+      master_clause_library*.npz        # Cached embeddings (auto-generated)
   output/                      # Generated contracts and test results
 ```
 
@@ -326,8 +356,11 @@ Capstone_project/
 |-------|-----|
 | `ModuleNotFoundError: No module named 'ollama'` | `pip3 install ollama` |
 | `ModuleNotFoundError: No module named 'numpy'` | `pip3 install numpy` |
+| `ModuleNotFoundError: No module named 'docx'` | `pip3 install python-docx` |
 | `Connection refused` on Ollama | Run `ollama serve` first |
 | `qwen3:4b` model not found | Run `ollama pull qwen3:4b` |
-| Open WebUI can't find `lexiagent` model | Check the connection URL in Settings > Connections. Use `host.docker.internal` for Docker. |
-| Extraction takes >2 minutes | Normal for qwen3:4b on CPU. GPU acceleration recommended for demos. |
-| `LEXI_STATE` visible in chat | This is hidden state for conversation continuity. Rendering may vary by Open WebUI version. |
+| Open WebUI can't find `lexiagent` model | Check connection URL in Settings > Connections. Must be `http://host.docker.internal:8001/v1` |
+| Changes not reflected in Open WebUI | Restart API server: Ctrl+C then `python3 app/api_server.py`. Start a **new chat**. |
+| Docker not running | `open -a Docker` and wait for whale icon |
+| Open WebUI container stopped | `docker start open-webui` |
+| Extraction takes >2 minutes | Normal for qwen3:4b on CPU. GPU recommended. |
