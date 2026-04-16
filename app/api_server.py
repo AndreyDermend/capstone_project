@@ -41,6 +41,7 @@ from run_intake_loop import (
 )
 from assemble_contract import assemble_contract, load_resources
 from contract_docx import generate_contract_docx
+from contract_artifact import generate_artifact_html
 
 OUTPUT_DIR = ROOT / "output"
 OUTPUT_DIR.mkdir(exist_ok=True)
@@ -58,22 +59,35 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-CONTRACT_TYPES = {
-    "nda": "NDA",
-    "non-disclosure": "NDA",
-    "confidentiality": "NDA",
-    "consulting": "ConsultingAgreement",
-    "consultant": "ConsultingAgreement",
-    "employment": "EmploymentAgreement",
-    "employee": "EmploymentAgreement",
-    "hiring": "EmploymentAgreement",
-    "service": "ServiceAgreement",
-    "services": "ServiceAgreement",
-    "contractor": "ServiceAgreement",
-    "cleaning": "ServiceAgreement",
-    "landscaping": "ServiceAgreement",
-    "maintenance": "ServiceAgreement",
-}
+# Ordered from most-specific phrase to single-word hint. First match wins.
+# Full phrases like "service agreement" must appear before single-word keywords
+# so we don't misclassify a service-agreement request just because the user
+# happens to mention e.g. an "employee" of one of the parties.
+CONTRACT_TYPE_RULES: List[Tuple[str, str]] = [
+    ("service agreement",         "ServiceAgreement"),
+    ("services agreement",        "ServiceAgreement"),
+    ("non-disclosure agreement",  "NDA"),
+    ("nondisclosure agreement",   "NDA"),
+    ("confidentiality agreement", "NDA"),
+    ("consulting agreement",      "ConsultingAgreement"),
+    ("consultancy agreement",     "ConsultingAgreement"),
+    ("employment agreement",      "EmploymentAgreement"),
+    ("employment contract",       "EmploymentAgreement"),
+    # Single-word hints — only used if no phrase matched above.
+    ("nda",            "NDA"),
+    ("non-disclosure", "NDA"),
+    ("confidentiality", "NDA"),
+    ("consulting",     "ConsultingAgreement"),
+    ("consultant",     "ConsultingAgreement"),
+    ("employment",     "EmploymentAgreement"),
+    ("hiring",         "EmploymentAgreement"),
+    ("employee",       "EmploymentAgreement"),
+    ("contractor",     "ServiceAgreement"),
+    ("cleaning",       "ServiceAgreement"),
+    ("landscaping",    "ServiceAgreement"),
+    ("maintenance",    "ServiceAgreement"),
+    ("services",       "ServiceAgreement"),
+]
 
 CONTRACT_LABELS = {
     "NDA": "Non-Disclosure Agreement",
@@ -87,9 +101,12 @@ CONTRACT_LABELS = {
 # Helpers
 # ---------------------------------------------------------------------------
 def detect_contract_type(text: str) -> Optional[str]:
-    """Guess contract type from user text. Returns None if ambiguous."""
+    """Guess contract type from user text. Returns None if ambiguous.
+
+    Matches longest/most-specific phrase first. See ``CONTRACT_TYPE_RULES``.
+    """
     lower = text.lower()
-    for keyword, ctype in CONTRACT_TYPES.items():
+    for keyword, ctype in CONTRACT_TYPE_RULES:
         if keyword in lower:
             return ctype
     return None
@@ -153,51 +170,49 @@ def parse_follow_up_answers(
     return answers
 
 
-def extract_state_from_history(messages: List[dict]) -> dict:
-    """Parse conversation history to reconstruct pipeline state."""
-    state = {
-        "contract_type": None,
+# Server-side session store. Keyed by a hash of the first user message so
+# the same conversation (which Open WebUI re-sends in full every request)
+# resolves to the same session. Prior approach embedded state as an HTML
+# comment in the chat; Open WebUI's markdown renderer escaped the comment
+# and leaked the whole state blob to the user.
+import hashlib
+
+_SESSION_STATES: Dict[str, dict] = {}
+
+
+def _session_id(first_user_message: str) -> str:
+    return hashlib.sha256(first_user_message.strip().encode("utf-8")).hexdigest()[:16]
+
+
+def _new_state(initial_prompt: str, contract_type: Optional[str]) -> dict:
+    return {
+        "contract_type": contract_type,
         "verified_answers": {},
+        "verified_evidence": {},
         "pending_follow_ups": [],
-        "phase": "initial",  # initial | follow_up | complete
-        "initial_prompt": None,
+        "phase": "initial",
+        "initial_prompt": initial_prompt,
     }
 
-    for msg in messages:
-        role = msg.get("role", "")
-        content = msg.get("content", "")
 
-        if role == "user" and state["initial_prompt"] is None:
-            state["initial_prompt"] = content
-            state["contract_type"] = detect_contract_type(content)
+def get_or_create_session(messages: List[dict]) -> Tuple[Optional[str], Optional[dict]]:
+    """Return (session_id, state) for this conversation, creating a fresh
+    state dict on first sight. Returns (None, None) if there's no user
+    message to key on yet."""
+    user_msgs = [m for m in messages if m.get("role") == "user"]
+    if not user_msgs:
+        return None, None
 
-        # Parse our own assistant messages to recover state
-        if role == "assistant":
-            # Look for the JSON state block we embed
-            m = re.search(
-                r"<!--LEXI_STATE(.*?)-->",
-                content,
-                re.DOTALL,
-            )
-            if m:
-                try:
-                    saved = json.loads(m.group(1))
-                    state["verified_answers"] = saved.get("verified_answers", {})
-                    state["pending_follow_ups"] = saved.get("pending_follow_ups", [])
-                    state["contract_type"] = saved.get("contract_type", state["contract_type"])
-                    state["phase"] = saved.get("phase", "follow_up")
-                except json.JSONDecodeError:
-                    pass
+    first = user_msgs[0].get("content", "").strip()
+    if not first:
+        return None, None
 
-        # If user message comes after a follow_up phase, it's follow-up answers
-        if role == "user" and state["phase"] == "follow_up" and content != state["initial_prompt"]:
-            ct = state["contract_type"] or "NDA"
-            new_answers = parse_follow_up_answers(
-                content, state["pending_follow_ups"], ct
-            )
-            state["verified_answers"].update(new_answers)
-
-    return state
+    sid = _session_id(first)
+    state = _SESSION_STATES.get(sid)
+    if state is None:
+        state = _new_state(first, detect_contract_type(first))
+        _SESSION_STATES[sid] = state
+    return sid, state
 
 
 def assemble_and_generate_docx(
@@ -206,63 +221,49 @@ def assemble_and_generate_docx(
     contract_type: str,
     label: str,
     port: int = 8001,
-) -> Tuple[str, str]:
-    """Assemble contract, generate DOCX, return (summary_markdown, download_url)."""
+) -> Tuple[str, dict]:
+    """Assemble contract, generate the HTML artifact + DOCX.
+
+    Returns (chat_payload, final_answers) where chat_payload is the full
+    agent message: an ```html artifact block followed by a single-line
+    DOCX download link. Nothing else.
+    """
     final = add_derived_defaults(dict(verified_answers), contract_type)
     result = assemble_contract(final, contract_type, use_rag=True)
     contract_text, unresolved, clauses, rag_meta = (
         result if len(result) == 4 else (*result, None)
     )
 
-    # Generate DOCX
-    docx_path = generate_contract_docx(
+    # DOCX + citation sidecar
+    docx_path, _sidecar_path = generate_contract_docx(
         contract_text, clauses, rag_meta, final, evidence,
         contract_type, label,
     )
-    filename = docx_path.name
-    download_url = f"http://localhost:{port}/download/{filename}"
+    docx_url = f"http://localhost:{port}/download/{docx_path.name}"
 
-    # Build summary
-    n_clauses = len(clauses)
-    sources = sorted(set(c.get("source", "?") for c in clauses))
-    rag_count = sum(1 for m in (rag_meta or {}).values() if m.get("method") == "rag")
-
-    summary = (
-        f"Your **{label}** is ready!\n\n"
-        f"### Assembly Summary\n\n"
-        f"- **{n_clauses} clauses** from {len(sources)} templates ({', '.join(sources)})\n"
-        f"- **{rag_count}** selected via RAG semantic matching\n"
-        f"- **{n_clauses - rag_count}** selected deterministically\n\n"
-        f"### Download\n\n"
-        f"**[Download {label} (DOCX)]({download_url})**\n\n"
-        f"The document includes:\n"
-        f"- Professional formatting (Times New Roman)\n"
-        f"- Blue highlighted user-provided values with field markers\n"
-        f"- Source citation on every clause (template, variant, RAG score)\n"
-        f"- Full audit appendix with clause sources + extraction evidence\n"
+    # Self-contained interactive artifact (hover-to-cite)
+    _, _, placeholder_mappings, cfg = load_resources(contract_type)
+    subtype_field = cfg.get("subtype_field", "nda_type")
+    subtype = final.get(subtype_field, next(iter(placeholder_mappings.keys())))
+    artifact_html = generate_artifact_html(
+        clauses=clauses,
+        rag_metadata=rag_meta,
+        verified_answers=final,
+        evidence=evidence,
+        placeholder_mappings=placeholder_mappings,
+        subtype=subtype,
+        contract_type=contract_type,
+        label=label,
     )
 
-    if unresolved:
-        summary += f"\n**Warning:** {len(unresolved)} unresolved placeholders: {', '.join(unresolved)}\n"
-
-    return summary, final
-
-
-def embed_state(
-    contract_type: str,
-    verified_answers: dict,
-    pending_follow_ups: list,
-    phase: str,
-) -> str:
-    """Embed state as a hidden HTML comment for conversation continuity."""
-    state = {
-        "contract_type": contract_type,
-        "verified_answers": verified_answers,
-        "pending_follow_ups": pending_follow_ups,
-        "phase": phase,
-    }
-    # Hidden from rendering in Open WebUI but parseable by us
-    return f"<!--LEXI_STATE{json.dumps(state)}-->"
+    # Chat payload: DOCX link FIRST so it's clickable the instant the chunk
+    # lands — then the artifact. Putting the link last meant waiting for the
+    # whole ~30KB HTML block before the user could download.
+    payload = (
+        f"[\U0001F4C4 Download DOCX]({docx_url})\n\n"
+        f"```html\n{artifact_html}\n```\n"
+    )
+    return payload, final
 
 
 # ---------------------------------------------------------------------------
@@ -305,19 +306,27 @@ def make_response(content: str) -> dict:
 # ---------------------------------------------------------------------------
 # Streaming helpers
 # ---------------------------------------------------------------------------
-import asyncio
-
-async def stream_text(text: str, chunk_size: int = 40):
-    """Yield SSE chunks for a block of text."""
+# Starlette's StreamingResponse iterates sync generators in a threadpool,
+# so time.sleep here does NOT block the async event loop and other
+# endpoints (like /download) can be served concurrently.
+def stream_text(text: str, chunk_size: int = 40):
+    """Yield SSE chunks for a block of text (typing animation)."""
     for i in range(0, len(text), chunk_size):
         yield make_chunk(text[i : i + chunk_size])
-        await asyncio.sleep(0.005)
+        time.sleep(0.005)
 
 
-async def stream_response(text: str):
+def emit_block(text: str):
+    """Emit a pre-assembled block (e.g. the HTML artifact) as one SSE chunk.
+    Skipping the 40-char / 5 ms typing throttle means a 30 KB artifact lands
+    in a single event instead of ~3.75 s of dribbling — the DOCX link above
+    it is clickable immediately."""
+    yield make_chunk(text)
+
+
+def stream_response(text: str):
     """Full streaming response with stop."""
-    async for chunk in stream_text(text):
-        yield chunk
+    yield from stream_text(text)
     yield make_chunk("", finish_reason="stop")
     yield "data: [DONE]\n\n"
 
@@ -325,58 +334,46 @@ async def stream_response(text: str):
 # ---------------------------------------------------------------------------
 # Pipeline logic
 # ---------------------------------------------------------------------------
-def handle_initial_prompt(prompt: str, contract_type: str, stream: bool):
-    """Handle the first user message — extraction + follow-up generation."""
+def handle_initial_prompt(state: dict, stream: bool):
+    """Handle the first user message — extraction + follow-up generation.
+
+    Mutates ``state`` (the session dict) in place with the extraction
+    results; nothing about that state is written to the chat output.
+    """
+    prompt = state["initial_prompt"]
+    contract_type = state["contract_type"]
     label = CONTRACT_LABELS.get(contract_type, contract_type)
 
     def generate():
-        # Status update
-        yield from stream_text(f"**LexiAgent** — Drafting a **{label}**\n\n")
-        yield from stream_text(f"Analyzing your request with AI extraction...\n\n")
+        yield from stream_text(f"Drafting your **{label}**\u2026\n\n")
 
-        # Run extraction (this is the slow part — 30-120s)
         extraction = extract_answers_from_prompt(prompt, contract_type)
         verified_answers, follow_ups, evidence = verify_and_prepare(
             extraction, contract_type
         )
-
-        # Show what was extracted
-        yield from stream_text("### Extracted Fields\n\n")
-        if verified_answers:
-            yield from stream_text("| Field | Value |\n|-------|-------|\n")
-            lookup = field_lookup(contract_type)
-            for fname, val in verified_answers.items():
-                field = lookup.get(fname, {})
-                label_str = field.get("label", fname) if isinstance(field, dict) else fname
-                yield from stream_text(f"| {label_str} | {val} |\n")
-            yield from stream_text("\n")
+        state["verified_answers"] = dict(verified_answers)
+        state["verified_evidence"] = dict(evidence)
 
         if not follow_ups:
-            # All fields extracted — assemble immediately
-            yield from stream_text("All required fields extracted. Assembling contract with RAG...\n\n")
-            summary, final_answers = assemble_and_generate_docx(
+            state["phase"] = "complete"
+            state["pending_follow_ups"] = []
+            payload, final_answers = assemble_and_generate_docx(
                 verified_answers, evidence, contract_type, label
             )
-            yield from stream_text(summary)
-            yield from stream_text("\n\n")
-            yield from stream_text(
-                embed_state(contract_type, final_answers, [], "complete")
-            )
+            state["verified_answers"] = final_answers
+            yield from emit_block(payload)
         else:
-            # Need follow-ups
+            state["phase"] = "follow_up"
+            state["pending_follow_ups"] = follow_ups
             n = len(follow_ups)
             yield from stream_text(
-                f"I still need **{n} more field{'s' if n != 1 else ''}** to complete your contract. "
-                f"Please answer the following:\n\n"
+                f"I need **{n} more field{'s' if n != 1 else ''}** to finish. "
+                "Please answer:\n\n"
             )
             for i, item in enumerate(follow_ups, 1):
                 yield from stream_text(f"**{i}.** {item['question']}\n\n")
-
             yield from stream_text(
-                "\n*You can answer all at once — numbered, labeled, or one per line.*\n\n"
-            )
-            yield from stream_text(
-                embed_state(contract_type, verified_answers, follow_ups, "follow_up")
+                "*Answer all at once — numbered, labeled, or one per line.*"
             )
 
         yield make_chunk("", finish_reason="stop")
@@ -399,54 +396,42 @@ def handle_initial_prompt(prompt: str, contract_type: str, stream: bool):
 
 
 def handle_follow_up(state: dict, user_text: str, stream: bool):
-    """Handle follow-up answers — merge answers, assemble if complete."""
+    """Handle follow-up answers — merge answers, assemble if complete.
+
+    Mutates ``state`` in place. Nothing about state is ever written to
+    the chat output.
+    """
     contract_type = state["contract_type"]
     verified_answers = state["verified_answers"]
+    verified_evidence = state.get("verified_evidence") or {}
     pending = state["pending_follow_ups"]
     label = CONTRACT_LABELS.get(contract_type, contract_type)
 
-    # Parse the user's answers
     new_answers = parse_follow_up_answers(user_text, pending, contract_type)
     verified_answers.update(new_answers)
+    for fname in new_answers:
+        verified_evidence.setdefault(fname, user_text.strip())
 
-    # Check what's still missing
-    still_missing = []
-    for item in pending:
-        if item["field"] not in verified_answers:
-            still_missing.append(item)
+    still_missing = [item for item in pending if item["field"] not in verified_answers]
+    state["pending_follow_ups"] = still_missing
+    state["verified_evidence"] = verified_evidence
 
     def generate():
-        if new_answers:
-            yield from stream_text("### Additional Fields Collected\n\n")
-            yield from stream_text("| Field | Value |\n|-------|-------|\n")
-            lookup = field_lookup(contract_type)
-            for fname, val in new_answers.items():
-                field = lookup.get(fname, {})
-                label_str = field.get("label", fname) if isinstance(field, dict) else fname
-                yield from stream_text(f"| {label_str} | {val} |\n")
-            yield from stream_text("\n")
-
         if still_missing:
+            state["phase"] = "follow_up"
             n = len(still_missing)
             yield from stream_text(
                 f"I still need **{n} more field{'s' if n != 1 else ''}**:\n\n"
             )
             for i, item in enumerate(still_missing, 1):
                 yield from stream_text(f"**{i}.** {item['question']}\n\n")
-            yield from stream_text(
-                embed_state(contract_type, verified_answers, still_missing, "follow_up")
-            )
         else:
-            # All fields collected — assemble
-            yield from stream_text("All fields collected! Assembling your contract with RAG clause selection...\n\n")
-            summary, final_answers = assemble_and_generate_docx(
-                verified_answers, {}, contract_type, label
+            state["phase"] = "complete"
+            payload, final_answers = assemble_and_generate_docx(
+                verified_answers, verified_evidence, contract_type, label
             )
-            yield from stream_text(summary)
-            yield from stream_text("\n\n")
-            yield from stream_text(
-                embed_state(contract_type, final_answers, [], "complete")
-            )
+            state["verified_answers"] = final_answers
+            yield from emit_block(payload)
 
         yield make_chunk("", finish_reason="stop")
         yield "data: [DONE]\n\n"
@@ -490,21 +475,23 @@ async def chat_completions(request: Request):
     messages = body.get("messages", [])
     stream = body.get("stream", False)
 
-    # Filter to user/assistant messages only
     conversation = [m for m in messages if m.get("role") in ("user", "assistant")]
     if not conversation:
-        text = "Welcome to **LexiAgent**! Tell me what contract you need.\n\nI support:\n- Non-Disclosure Agreements (NDA)\n- Consulting Agreements\n- Employment Agreements\n- Service Agreements\n\nJust describe what you need in plain English."
+        text = (
+            "Welcome to **LexiAgent**! Tell me what contract you need.\n\n"
+            "I support:\n- Non-Disclosure Agreements (NDA)\n- Consulting Agreements\n"
+            "- Employment Agreements\n- Service Agreements\n\n"
+            "Just describe what you need in plain English."
+        )
         if stream:
             return StreamingResponse(stream_response(text), media_type="text/event-stream")
         return JSONResponse(make_response(text))
 
-    # Extract state from conversation
-    state = extract_state_from_history(conversation)
+    sid, state = get_or_create_session(conversation)
     user_messages = [m for m in conversation if m["role"] == "user"]
     latest_user = user_messages[-1]["content"] if user_messages else ""
 
-    # If no contract type detected, ask
-    if state["contract_type"] is None:
+    if state is None or state["contract_type"] is None:
         text = (
             "I couldn't determine the contract type from your request. "
             "Which type do you need?\n\n"
@@ -518,23 +505,19 @@ async def chat_completions(request: Request):
             return StreamingResponse(stream_response(text), media_type="text/event-stream")
         return JSONResponse(make_response(text))
 
-    # Route based on phase
-    if state["phase"] == "initial" or (state["phase"] == "follow_up" and not state["pending_follow_ups"]):
-        # First extraction
-        return handle_initial_prompt(
-            state["initial_prompt"], state["contract_type"], stream
-        )
-    elif state["phase"] == "follow_up":
+    phase = state["phase"]
+    if phase == "initial":
+        return handle_initial_prompt(state, stream)
+    if phase == "follow_up":
         return handle_follow_up(state, latest_user, stream)
-    elif state["phase"] == "complete":
-        # Contract already assembled — offer to start a new one
-        text = (
-            "Your contract has been generated! Check the download link above.\n\n"
-            "To draft a new contract, just describe what you need."
-        )
-        if stream:
-            return StreamingResponse(stream_response(text), media_type="text/event-stream")
-        return JSONResponse(make_response(text))
+    # phase == "complete"
+    text = (
+        "Your contract has been generated \u2014 check the download link above.\n\n"
+        "To draft a new contract, start a **new chat** so I know to reset."
+    )
+    if stream:
+        return StreamingResponse(stream_response(text), media_type="text/event-stream")
+    return JSONResponse(make_response(text))
 
 
 # ---------------------------------------------------------------------------

@@ -766,7 +766,13 @@ def add_derived_defaults(answers: Dict[str, Any], contract_type: str = DEFAULT_C
             a = str(answers.get("party_a_email", "")).strip()
             b = str(answers.get("party_b_email", "")).strip()
             answers["front_page_email_addresses"] = " / ".join([x for x in [a, b] if x])
-    # Ensure optional fields have defaults
+    if not answers.get("dispute_resolution_method"):
+        answers["dispute_resolution_method"] = "Litigation"
+    if not answers.get("term_end_date"):
+        if contract_type == "ServiceAgreement":
+            answers["term_end_date"] = "the completion of the Services"
+        elif contract_type == "EmploymentAgreement":
+            answers["term_end_date"] = "the termination of employment"
     if "special_provisions" not in answers:
         answers["special_provisions"] = ""
     return answers

@@ -36,8 +36,9 @@ from run_intake_loop import (
     field_name as get_field_name,
     normalize_value_for_field,
 )
-from assemble_contract import assemble_contract
+from assemble_contract import assemble_contract, load_resources
 from contract_docx import generate_contract_docx
+from contract_artifact import generate_artifact_html
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -171,40 +172,37 @@ def assemble_and_generate_docx(
         result if len(result) == 4 else (*result, None)
     )
 
-    # Generate DOCX with citations
-    docx_path = generate_contract_docx(
+    # Generate clean DOCX + citation JSON sidecar
+    docx_path, _sidecar_path = generate_contract_docx(
         contract_text, clauses, rag_meta, final, evidence,
         contract_type, label,
     )
 
-    # Build summary for chat (no raw contract text)
-    n_clauses = len(clauses)
-    sources = set(c.get("source", "?") for c in clauses)
-    rag_count = sum(
-        1 for m in (rag_meta or {}).values() if m.get("method") == "rag"
+    # Generate the interactive HTML artifact next to the DOCX so the user
+    # can open it in a browser tab (Gradio can't render it inline like
+    # Open WebUI does, so we serve it as a file).
+    _, _, placeholder_mappings, cfg = load_resources(contract_type)
+    subtype_field = cfg.get("subtype_field", "nda_type")
+    subtype = final.get(subtype_field, next(iter(placeholder_mappings.keys())))
+    artifact_html = generate_artifact_html(
+        clauses=clauses,
+        rag_metadata=rag_meta,
+        verified_answers=final,
+        evidence=evidence,
+        placeholder_mappings=placeholder_mappings,
+        subtype=subtype,
+        contract_type=contract_type,
+        label=label,
     )
+    artifact_path = docx_path.with_suffix(".html")
+    artifact_path.write_text(artifact_html)
 
-    summary_parts = [
-        f"Your **{label}** has been assembled and is ready to download.\n",
-        f"### Assembly Summary\n",
-        f"- **{n_clauses} clauses** assembled from {len(sources)} source templates ({', '.join(sorted(sources))})",
-        f"- **{rag_count} clauses** selected via RAG semantic matching",
-        f"- **{n_clauses - rag_count} clauses** selected deterministically (single variant)",
-    ]
-
-    if unresolved:
-        summary_parts.append(f"\n**Warning:** {len(unresolved)} unresolved placeholders: {', '.join(unresolved)}")
-
-    summary_parts.append(
-        "\n**The DOCX includes:**\n"
-        "- Professional formatting with Times New Roman\n"
-        "- **Blue highlighted** user-provided values with field markers\n"
-        "- Source citation on every clause (template, variant, RAG score)\n"
-        "- Full audit appendix with clause sources + extraction evidence\n"
-        "\nClick the download button below to get your contract."
+    summary = (
+        f"Your **{label}** is ready.\n\n"
+        f"Open the interactive view (hover any clause or highlighted value "
+        f"for its source): `{artifact_path}`\n"
     )
-
-    return "\n".join(summary_parts), str(docx_path), final
+    return summary, str(docx_path), final
 
 
 # ---------------------------------------------------------------------------
