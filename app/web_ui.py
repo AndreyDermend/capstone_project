@@ -193,6 +193,8 @@ def assemble_and_generate_docx(
         subtype=subtype,
         contract_type=contract_type,
         label=label,
+        docx_bytes=docx_path.read_bytes(),
+        docx_filename=docx_path.name,
     )
     artifact_path = docx_path.with_suffix(".html")
     artifact_path.write_text(artifact_html)

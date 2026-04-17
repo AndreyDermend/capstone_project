@@ -21,6 +21,7 @@ Security (balanced tier):
     "RAG-selected (best of N)" or "Deterministic (only variant available)"
 """
 
+import base64
 import html as html_lib
 import re
 from typing import Any, Dict, List, Optional
@@ -329,11 +330,17 @@ def generate_artifact_html(
     subtype: str,
     contract_type: str,
     label: str,
+    docx_bytes: Optional[bytes] = None,
+    docx_filename: str = "contract.docx",
 ) -> str:
     """Build the self-contained HTML artifact string.
 
     ``placeholder_mappings`` is the full config dict (subtype -> {field: token});
     ``subtype`` selects the right sub-map.
+
+    If ``docx_bytes`` is provided the DOCX is embedded as base64 and a
+    download button is injected into the legend bar — no separate HTTP
+    request or new-tab navigation required.
     """
     mapping = placeholder_mappings.get(subtype, {})
     inverse_mapping = {token: field for field, token in mapping.items()}
@@ -384,6 +391,28 @@ def generate_artifact_html(
         "</div>"
     )
 
+    # Embed DOCX as base64 and inject a JS download button — eliminates the
+    # separate /download HTTP request that caused multi-minute tab hangs.
+    docx_script = ""
+    dl_button = ""
+    if docx_bytes:
+        b64 = base64.b64encode(docx_bytes).decode("ascii")
+        safe_filename = html_lib.escape(docx_filename, quote=True)
+        docx_script = f"""<script>
+function _dlDocx(){{
+  var b64="{b64}";
+  var raw=atob(b64);
+  var buf=new Uint8Array(raw.length);
+  for(var i=0;i<raw.length;i++)buf[i]=raw.charCodeAt(i);
+  var blob=new Blob([buf],{{type:"application/vnd.openxmlformats-officedocument.wordprocessingml.document"}});
+  var a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="{safe_filename}";
+  document.body.appendChild(a);a.click();document.body.removeChild(a);
+}}
+</script>"""
+        dl_button = '<button onclick="_dlDocx()" class="dl-btn">\u2b07\ufe0f Download DOCX</button>'
+
     header_title = html_lib.escape(label)
 
     html_out = f"""<!DOCTYPE html>
@@ -391,11 +420,21 @@ def generate_artifact_html(
 <head>
 <meta charset="utf-8">
 <title>{header_title}</title>
-<style>{CSS}</style>
+<style>{CSS}
+.dl-btn{{
+  font-family:-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:13px;font-weight:600;
+  padding:6px 14px;border-radius:6px;border:none;
+  background:#1d4ed8;color:#fff;cursor:pointer;
+  margin-left:auto;white-space:nowrap;
+}}
+.dl-btn:hover{{background:#1e40af;}}
+</style>
+{docx_script}
 </head>
 <body>
 <main>
-{legend}
+{legend.replace('</div>', dl_button + '</div>', 1)}
 {''.join(clause_blocks)}
 </main>
 </body>

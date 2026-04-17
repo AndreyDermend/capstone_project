@@ -19,9 +19,8 @@ from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple
 
 from fastapi import FastAPI, Request
-from fastapi.responses import StreamingResponse, JSONResponse, FileResponse
+from fastapi.responses import StreamingResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 
 # ---------------------------------------------------------------------------
 # Project imports
@@ -221,12 +220,11 @@ def assemble_and_generate_docx(
     contract_type: str,
     label: str,
     port: int = 8001,
-) -> Tuple[str, dict]:
+) -> Tuple[str, str, dict]:
     """Assemble contract, generate the HTML artifact + DOCX.
 
-    Returns (chat_payload, final_answers) where chat_payload is the full
-    agent message: an ```html artifact block followed by a single-line
-    DOCX download link. Nothing else.
+    Returns (docx_url, artifact_html, final_answers) so callers can emit
+    the download link and the artifact as two separate SSE events.
     """
     final = add_derived_defaults(dict(verified_answers), contract_type)
     result = assemble_contract(final, contract_type, use_rag=True)
@@ -239,7 +237,11 @@ def assemble_and_generate_docx(
         contract_text, clauses, rag_meta, final, evidence,
         contract_type, label,
     )
-    docx_url = f"http://localhost:{port}/download/{docx_path.name}"
+    # Use 127.0.0.1 instead of localhost — avoids IPv6 resolution delays
+    # on macOS and uses a different origin from Open WebUI's connection
+    # (host.docker.internal:8001) so the download gets its own connection
+    # pool and doesn't queue behind the SSE stream.
+    docx_url = f"http://127.0.0.1:{port}/download/{docx_path.name}"
 
     # Self-contained interactive artifact (hover-to-cite)
     _, _, placeholder_mappings, cfg = load_resources(contract_type)
@@ -254,16 +256,11 @@ def assemble_and_generate_docx(
         subtype=subtype,
         contract_type=contract_type,
         label=label,
+        docx_bytes=docx_path.read_bytes(),
+        docx_filename=docx_path.name,
     )
 
-    # Chat payload: DOCX link FIRST so it's clickable the instant the chunk
-    # lands — then the artifact. Putting the link last meant waiting for the
-    # whole ~30KB HTML block before the user could download.
-    payload = (
-        f"[\U0001F4C4 Download DOCX]({docx_url})\n\n"
-        f"```html\n{artifact_html}\n```\n"
-    )
-    return payload, final
+    return docx_url, artifact_html, final
 
 
 # ---------------------------------------------------------------------------
@@ -357,11 +354,11 @@ def handle_initial_prompt(state: dict, stream: bool):
         if not follow_ups:
             state["phase"] = "complete"
             state["pending_follow_ups"] = []
-            payload, final_answers = assemble_and_generate_docx(
+            docx_url, artifact_html, final_answers = assemble_and_generate_docx(
                 verified_answers, evidence, contract_type, label
             )
             state["verified_answers"] = final_answers
-            yield from emit_block(payload)
+            yield from emit_block(f"```html\n{artifact_html}\n```\n")
         else:
             state["phase"] = "follow_up"
             state["pending_follow_ups"] = follow_ups
@@ -427,11 +424,11 @@ def handle_follow_up(state: dict, user_text: str, stream: bool):
                 yield from stream_text(f"**{i}.** {item['question']}\n\n")
         else:
             state["phase"] = "complete"
-            payload, final_answers = assemble_and_generate_docx(
+            docx_url, artifact_html, final_answers = assemble_and_generate_docx(
                 verified_answers, verified_evidence, contract_type, label
             )
             state["verified_answers"] = final_answers
-            yield from emit_block(payload)
+            yield from emit_block(f"```html\n{artifact_html}\n```\n")
 
         yield make_chunk("", finish_reason="stop")
         yield "data: [DONE]\n\n"
@@ -528,10 +525,18 @@ async def download_file(filename: str):
     filepath = OUTPUT_DIR / filename
     if not filepath.exists() or not filename.endswith(".docx"):
         return JSONResponse({"error": "File not found"}, status_code=404)
-    return FileResponse(
-        path=str(filepath),
-        filename=filename,
+
+    # Read into memory (files are small, ~20 KB) and return with explicit
+    # headers. FileResponse uses async file I/O which can stall behind a
+    # busy event loop; a pre-read Response avoids that.
+    content = filepath.read_bytes()
+    return Response(
+        content=content,
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f'attachment; filename="{filename}"',
+            "Content-Length": str(len(content)),
+        },
     )
 
 
