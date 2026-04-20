@@ -72,7 +72,7 @@ def setup_styles(doc: Document):
 # ---------------------------------------------------------------------------
 # Plain-text → DOCX renderer
 # ---------------------------------------------------------------------------
-_HEADING_NUMBERED_RE = re.compile(r"^\d+\.\s+[A-Z][A-Z\s/&\-]+$")
+_HEADING_NUMBERED_RE = re.compile(r"^\d+\.\s+[A-Z][A-Za-z0-9\s/&,'()\-]+$")
 _SUBHEADING_PREFIX_RE = re.compile(r"^(?:[A-Z]\.\s+|\([A-Za-z0-9]\)\s+)")
 
 

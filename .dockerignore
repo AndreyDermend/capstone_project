@@ -1,0 +1,16 @@
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.git/
+.gitignore
+.env
+output/
+*.embeddings.npz
+**/*.embeddings.npz
+.DS_Store
+**/.DS_Store
+baseline_output.txt
+TESTING_METHODOLOGY_RESULTS.md
+README.md

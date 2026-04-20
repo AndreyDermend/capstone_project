@@ -1,4 +1,5 @@
 import json
+import os
 import re
 import sys
 from pathlib import Path
@@ -9,13 +10,11 @@ from ollama import chat
 # Allow running from app/ directory or project root
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
-from assemble_contract import assemble_contract, load_questionnaire
+from assemble_contract import load_questionnaire
 
 CONFIG_DIR = ROOT / "config"
-OUTPUT_DIR = ROOT / "output"
-OUTPUT_DIR.mkdir(exist_ok=True)
 
-MODEL = "qwen3:4b"
+MODEL = os.getenv("EXTRACTION_MODEL", "qwen3:4b")
 DEFAULT_CONTRACT_TYPE = "NDA"
 
 
@@ -744,22 +743,6 @@ def verify_and_prepare(extraction: dict, contract_type: str = DEFAULT_CONTRACT_T
     return verified_answers, final_follow_ups, verified_evidence
 
 
-def ask_follow_ups(answers: Dict[str, Any], follow_up_questions: List[dict], contract_type: str = DEFAULT_CONTRACT_TYPE) -> Dict[str, Any]:
-    lookup = field_lookup(contract_type)
-    for item in follow_up_questions:
-        field_name_value = item["field"]
-        question = item["question"]
-        field = lookup[field_name_value]
-        while True:
-            raw = input(f"{question}\n> ").strip()
-            normalized_value, ok = normalize_value_for_field(raw, field)
-            if ok:
-                answers[field_name_value] = normalized_value
-                break
-            print("That answer doesn't match the expected format. Please try again.")
-    return answers
-
-
 def add_derived_defaults(answers: Dict[str, Any], contract_type: str = DEFAULT_CONTRACT_TYPE) -> Dict[str, Any]:
     if contract_type == "NDA":
         if not answers.get("front_page_email_addresses"):
@@ -776,90 +759,3 @@ def add_derived_defaults(answers: Dict[str, Any], contract_type: str = DEFAULT_C
     if "special_provisions" not in answers:
         answers["special_provisions"] = ""
     return answers
-
-
-def build_key_terms_summary(answers: Dict[str, Any], contract_type: str = DEFAULT_CONTRACT_TYPE) -> str:
-    lines = ["Key Terms Summary"]
-    for f in schema_fields(contract_type):
-        name = field_name(f)
-        label = f.get("label", name)
-        val = answers.get(name, "")
-        if val:
-            lines.append(f"- {label}: {val}")
-    return "\n".join(lines)
-
-
-def save_outputs(user_prompt: str, extraction: dict, verified_answers: dict, verified_evidence: dict, contract_text: str, unresolved: List[str], contract_type: str = DEFAULT_CONTRACT_TYPE) -> None:
-    (OUTPUT_DIR / "input_prompt.txt").write_text(user_prompt, encoding="utf-8")
-    (OUTPUT_DIR / "extraction_raw.json").write_text(json.dumps(extraction, indent=2), encoding="utf-8")
-    (OUTPUT_DIR / "verified_answers.json").write_text(json.dumps(verified_answers, indent=2), encoding="utf-8")
-    (OUTPUT_DIR / "verified_evidence.json").write_text(json.dumps(verified_evidence, indent=2), encoding="utf-8")
-    filename = f"generated_{contract_type.lower()}.txt"
-    (OUTPUT_DIR / filename).write_text(contract_text, encoding="utf-8")
-    (OUTPUT_DIR / "key_terms_summary.txt").write_text(build_key_terms_summary(verified_answers, contract_type), encoding="utf-8")
-    (OUTPUT_DIR / "validation_report.json").write_text(json.dumps({"unresolved_placeholders": unresolved}, indent=2), encoding="utf-8")
-
-
-def run_intake_loop(user_prompt: str, contract_type: str = DEFAULT_CONTRACT_TYPE):
-    print(f"\nAnalyzing your {contract_type} request...")
-    extraction = extract_answers_from_prompt(user_prompt, contract_type)
-    verified_answers, follow_ups, verified_evidence = verify_and_prepare(extraction, contract_type)
-
-    if verified_answers:
-        print(f"\nI understood the following from your request:")
-        for f in schema_fields(contract_type):
-            name = field_name(f)
-            val = verified_answers.get(name)
-            if val is not None:
-                label = f.get("label", name)
-                print(f"  {label}: {val}")
-
-    if follow_ups:
-        print(f"\nI need a few more details ({len(follow_ups)} questions):\n")
-        verified_answers = ask_follow_ups(verified_answers, follow_ups, contract_type)
-
-    verified_answers = add_derived_defaults(verified_answers, contract_type)
-
-    print("\nAssembling your contract...")
-    contract_text, unresolved, _ = assemble_contract(verified_answers, contract_type)
-
-    if unresolved:
-        print(f"\nWarning: {len(unresolved)} unresolved placeholders: {unresolved}")
-    else:
-        print("Done. All fields resolved.\n")
-
-    print("=" * 60)
-    print(contract_text)
-    print("=" * 60)
-
-    print("\n" + build_key_terms_summary(verified_answers, contract_type))
-
-    save_outputs(user_prompt, extraction, verified_answers, verified_evidence, contract_text, unresolved, contract_type)
-    print(f"\nAll files saved to {OUTPUT_DIR}/")
-
-
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  LexiAgent - Contract Drafting Assistant")
-    print("=" * 60)
-    print("\nWhat type of contract do you need?")
-    print("  1. NDA (Non-Disclosure Agreement)")
-    print("  2. Consulting Agreement")
-    print("  3. Employment Agreement")
-    print("  4. Service Agreement")
-    choice = input("\nEnter 1-4: ").strip()
-    if choice == "2":
-        contract_type = "ConsultingAgreement"
-    elif choice == "3":
-        contract_type = "EmploymentAgreement"
-    elif choice == "4":
-        contract_type = "ServiceAgreement"
-    else:
-        contract_type = "NDA"
-
-    print(f"\nDescribe the {contract_type} you need in plain English.")
-    prompt = input("\n> ").strip()
-    if not prompt:
-        print("No input provided. Exiting.")
-        sys.exit(0)
-    run_intake_loop(prompt, contract_type)

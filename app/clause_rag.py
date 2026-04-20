@@ -16,6 +16,7 @@ as .embeddings.npz files. Delete these to force re-embedding.
 """
 
 import json
+import os
 import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -26,7 +27,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data" / "clause_library"
 CONFIG_DIR = ROOT / "config"
 
-EMBED_MODEL = "nomic-embed-text"
+EMBED_MODEL = os.getenv("EMBED_MODEL", "nomic-embed-text")
 
 
 # ---------------------------------------------------------------------------

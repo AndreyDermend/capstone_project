@@ -1,0 +1,45 @@
+services:
+  lexiagent:
+    build: .
+    container_name: lexiagent
+    restart: unless-stopped
+    environment:
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+      EXTRACTION_MODEL: ${EXTRACTION_MODEL:-qwen3:4b}
+      EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      LEXIAGENT_API_KEY: ${LEXIAGENT_API_KEY:-}
+    ports:
+      - "${API_PORT:-8001}:8001"
+    extra_hosts:
+      # Lets the container reach Ollama running on the host (Linux support).
+      - "host.docker.internal:host-gateway"
+    volumes:
+      # Persist generated contracts outside the container.
+      - ./output:/app/output
+    networks:
+      - lexiagent-net
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    restart: unless-stopped
+    depends_on:
+      - lexiagent
+    environment:
+      # Open WebUI talks to LexiAgent over the internal Docker network only.
+      OPENAI_API_BASE_URL: http://lexiagent:8001/v1
+      OPENAI_API_KEY: ${LEXIAGENT_API_KEY:-sk-no-auth}
+      WEBUI_AUTH: "False"
+    ports:
+      - "3000:8080"
+    volumes:
+      - open-webui-data:/app/backend/data
+    networks:
+      - lexiagent-net
+
+networks:
+  lexiagent-net:
+    driver: bridge
+
+volumes:
+  open-webui-data:
