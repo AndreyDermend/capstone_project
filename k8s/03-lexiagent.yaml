@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lexiagent
+  namespace: lexiagent
+  labels:
+    app: lexiagent
+spec:
+  # Horizontal scaling of the stateless compute tier.
+  replicas: 4
+  selector:
+    matchLabels:
+      app: lexiagent
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: lexiagent
+    spec:
+      containers:
+        - name: lexiagent
+          image: capstone_project-lexiagent:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8001
+          envFrom:
+            - configMapRef:
+                name: lexiagent-config
+            - secretRef:
+                name: lexiagent-secrets
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lexiagent
+  namespace: lexiagent
+spec:
+  type: ClusterIP
+  # In-process session state (_SESSION_STATES) means follow-up messages must
+  # land on the same replica that handled the first message. ClientIP affinity
+  # handles this for the POC; a production deployment would externalize state
+  # to Redis and drop this.
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+  selector:
+    app: lexiagent
+  ports:
+    - name: http
+      port: 8001
+      targetPort: http

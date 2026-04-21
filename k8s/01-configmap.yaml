@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lexiagent-config
+  namespace: lexiagent
+data:
+  # Provider selection: "ollama" (default, private) or "anthropic" (Claude API).
+  LLM_PROVIDER: "anthropic"
+
+  # Where LexiAgent finds Ollama.
+  # - In-cluster Ollama (via 05-ollama.yaml):     http://ollama:11434
+  # - Ollama on the host node (hostNetwork style): http://host.docker.internal:11434
+  OLLAMA_HOST: "http://host.docker.internal:11434"
+
+  EXTRACTION_MODEL: "qwen3:4b"
+  EMBED_MODEL: "nomic-embed-text"
+  ANTHROPIC_MODEL: "claude-sonnet-4-6"

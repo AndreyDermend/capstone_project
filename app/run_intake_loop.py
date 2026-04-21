@@ -5,12 +5,11 @@ import sys
 from pathlib import Path
 from typing import Dict, Any, List, Tuple
 
-from ollama import chat
-
 # Allow running from app/ directory or project root
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "app"))
 from assemble_contract import load_questionnaire
+from llm_providers import extract_structured
 
 CONFIG_DIR = ROOT / "config"
 
@@ -669,16 +668,12 @@ def generic_follow_up_question(field: dict) -> str:
 # Extraction (single pass — no reviewer)
 # ---------------------------------------------------------------------------
 def extract_answers_from_prompt(user_prompt: str, contract_type: str = DEFAULT_CONTRACT_TYPE, model: str = MODEL) -> dict:
-    response = chat(
+    raw = extract_structured(
+        system_prompt=SYSTEM_PROMPT,
+        user_prompt=build_user_prompt(user_prompt, contract_type),
+        schema=build_extraction_schema(contract_type),
         model=model,
-        messages=[
-            {"role": "system", "content": SYSTEM_PROMPT},
-            {"role": "user", "content": build_user_prompt(user_prompt, contract_type)},
-        ],
-        format=build_extraction_schema(contract_type),
-        think=False,
     )
-    raw = response.message.content
     try:
         return json.loads(raw)
     except json.JSONDecodeError:

@@ -4,9 +4,12 @@ services:
     container_name: lexiagent
     restart: unless-stopped
     environment:
+      LLM_PROVIDER: ${LLM_PROVIDER:-ollama}
       OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
       EXTRACTION_MODEL: ${EXTRACTION_MODEL:-qwen3:4b}
       EMBED_MODEL: ${EMBED_MODEL:-nomic-embed-text}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-claude-sonnet-4-6}
       LEXIAGENT_API_KEY: ${LEXIAGENT_API_KEY:-}
     ports:
       - "${API_PORT:-8001}:8001"

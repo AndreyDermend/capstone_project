@@ -116,7 +116,12 @@ def parse_follow_up_answers(
     pending_fields: List[dict],
     contract_type: str,
 ) -> Dict[str, Any]:
-    """Parse free-form follow-up answers into field values."""
+    """Parse free-form follow-up answers.
+
+    Returns a dict keyed by field name. Each value is a ``(normalized_value,
+    evidence_segment)`` tuple so callers can record per-field evidence —
+    previously the whole user message was stamped onto every field.
+    """
     lookup = field_lookup(contract_type)
     answers: Dict[str, Any] = {}
 
@@ -129,9 +134,10 @@ def parse_follow_up_answers(
                 fname = pending_fields[idx]["field"]
                 field = lookup.get(fname)
                 if field:
-                    norm, ok = normalize_value_for_field(value.strip(), field)
+                    segment = value.strip()
+                    norm, ok = normalize_value_for_field(segment, field)
                     if ok:
-                        answers[fname] = norm
+                        answers[fname] = (norm, segment)
         return answers
 
     # Try "field_label: value" pattern
@@ -148,9 +154,10 @@ def parse_follow_up_answers(
         )
         m = pattern.search(user_text)
         if m:
-            norm, ok = normalize_value_for_field(m.group(1).strip(), field)
+            segment = m.group(1).strip()
+            norm, ok = normalize_value_for_field(segment, field)
             if ok:
-                answers[fname] = norm
+                answers[fname] = (norm, segment)
 
     # If we got less than half, try line-by-line assignment
     if len(answers) < len(pending_fields) * 0.5:
@@ -161,10 +168,11 @@ def parse_follow_up_answers(
                 field = lookup.get(fname)
                 if field and fname not in answers:
                     # Strip any leading "label:" prefix
-                    val = re.sub(r"^[^:]+:\s*", "", line) if ":" in line else line
-                    norm, ok = normalize_value_for_field(val.strip(), field)
+                    segment = re.sub(r"^[^:]+:\s*", "", line) if ":" in line else line
+                    segment = segment.strip()
+                    norm, ok = normalize_value_for_field(segment, field)
                     if ok:
-                        answers[fname] = norm
+                        answers[fname] = (norm, segment)
 
     return answers
 
@@ -405,9 +413,9 @@ def handle_follow_up(state: dict, user_text: str, stream: bool):
     label = CONTRACT_LABELS.get(contract_type, contract_type)
 
     new_answers = parse_follow_up_answers(user_text, pending, contract_type)
-    verified_answers.update(new_answers)
-    for fname in new_answers:
-        verified_evidence.setdefault(fname, user_text.strip())
+    for fname, (value, evidence) in new_answers.items():
+        verified_answers[fname] = value
+        verified_evidence.setdefault(fname, evidence)
 
     still_missing = [item for item in pending if item["field"] not in verified_answers]
     state["pending_follow_ups"] = still_missing
