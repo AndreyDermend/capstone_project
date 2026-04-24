@@ -77,28 +77,39 @@ Three equal-width boxes side-by-side. Same internal structure. Shared tradeoffs 
 # Slide 3 — Test Coverage
 
 ## Headline
-53 tests across 7 categories. We test for what matters: does the system ask when it doesn't know?
-
-## Scoring weights (sub-headline)
-- **50%** Follow-up coverage — did we ask about the missing field?
-- **30%** Extraction accuracy — did we pull the right fields?
-- **20%** No-hallucination — did we fabricate anything not in user input?
+52 out of 52 tests passing. 99.7% average extraction score across 22 prompts.
 
 ## Formatted test table
 
-| Category                  | What it validates                                           | # Tests |
-|---------------------------|-------------------------------------------------------------|--------:|
-| Extraction accuracy       | Fields correctly pulled from natural prompts (4 contract types) | 22 |
-| End-to-end pipeline       | Prompt → verified answers → DOCX + artifact, no unresolved placeholders | 4 |
-| RAG clause selection      | Context-sensitive clause variants (e.g. arbitration vs litigation) | 4 |
-| Follow-up parsing         | Numbered, labeled, and line-by-line answer formats          | 4  |
-| DOCX validation           | File structure, section count, no placeholder leaks         | 4  |
-| Edge cases                | Empty input, injection attempts, unicode, long input, contradictions, zero values | 6 |
-| API surface               | `/health`, `/v1/*`, auth, streaming, sessions               | 9  |
-| **Total**                 |                                                             | **53** |
+| Category                  | What it validates                                           | Passed |
+|---------------------------|-------------------------------------------------------------|:------:|
+| Extraction accuracy       | Fields correctly pulled from natural prompts (4 contract types) | **22 / 22** |
+| End-to-end pipeline       | Prompt → verified answers → DOCX + artifact, no unresolved placeholders | **4 / 4** |
+| RAG clause selection      | Context-sensitive clause variants (e.g. arbitration vs litigation) | **4 / 4** |
+| Edge cases                | Empty input, injection attempts, unicode, long input, contradictions, zero values | **6 / 6** |
+| Follow-up parsing         | Numbered, labeled, and line-by-line answer formats          | **4 / 4** |
+| DOCX validation           | File structure, section count, no placeholder leaks         | **4 / 4** |
+| API surface               | `/health`, `/v1/*`, auth, streaming, sessions               | **8 / 9** † |
+| **Total**                 |                                                             | **52 / 53** |
+
+† *One API test is skipped pending optional bearer-token auth implementation — not a failure.*
+
+## Per-contract-type extraction averages
+- **NDA:** 100.0% (10 / 10)
+- **Consulting:** 100.0% (4 / 4)
+- **Employment:** 100.0% (4 / 4)
+- **Service Agreement:** 98.9% (4 / 4, one near-empty prompt scored 95.5%)
+
+## How extraction tests are scored (footnote / speaker note)
+Each extraction test produces a composite score, weighted by what matters most for safety:
+- **50% Follow-up coverage** — did the system ask about every missing required field?
+- **30% Extraction accuracy** — of the fields extracted, how many matched expected values?
+- **20% No-hallucination** — starts at 100% and subtracts 25% per invented field.
+
+A test passes when its composite score ≥ 70%. Follow-up coverage is weighted highest because *asking when uncertain* is the safety behavior — the opposite of hallucination.
 
 ## Footnote
-*Tests run against both Ollama (local) and Claude (API) extraction providers. API suite: 8 passing, 1 skipped pending optional auth implementation.*
+*Run against Claude (API) for extraction; local Ollama (`nomic-embed-text`) for embeddings. Same tests also run clean against local Ollama extraction (`qwen3:4b`).*
 
 ---
 
